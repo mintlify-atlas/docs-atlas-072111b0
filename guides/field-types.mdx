@@ -60,51 +60,21 @@ const schema = {
 
 ### Format validation
 
-PolyVal provides built-in format validators for common string patterns:
+PolyVal provides built-in email format validation:
 
-<Tabs>
-  <Tab title="Email">
-    ```typescript
-    const schema = {
-      email: {
-        type: 'string',
-        required: true,
-        email: true  // Validates email format
-      }
-    };
-    ```
-  </Tab>
-  <Tab title="URL">
-    ```typescript
-    const schema = {
-      website: {
-        type: 'string',
-        url: true  // Validates URL format
-      }
-    };
-    ```
-  </Tab>
-  <Tab title="UUID">
-    ```typescript
-    const schema = {
-      id: {
-        type: 'string',
-        uuid: true  // Validates UUID format
-      }
-    };
-    ```
-  </Tab>
-  <Tab title="IP Address">
-    ```typescript
-    const schema = {
-      ipAddress: {
-        type: 'string',
-        ip: 'v4'  // Validates IPv4 or 'v6' for IPv6
-      }
-    };
-    ```
-  </Tab>
-</Tabs>
+```typescript
+const schema = {
+  email: {
+    type: 'string',
+    required: true,
+    email: true  // Validates email format
+  }
+};
+```
+
+<Note>
+The email validator uses the pattern `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` to validate email addresses.
+</Note>
 
 ### Pattern matching
 
@@ -133,48 +103,9 @@ const schema = {
   The `regex` rule accepts a string pattern, not a RegExp object. Remember to escape special characters.
 </Note>
 
-### String prefix and suffix
-
-Validate that strings start or end with specific values:
-
-```typescript
-const schema = {
-  protocol: {
-    type: 'string',
-    startsWith: 'https://'  // Must start with https://
-  },
-  filename: {
-    type: 'string',
-    endsWith: '.pdf'  // Must end with .pdf
-  }
-};
-```
-
-### Numeric strings
-
-Validate that a string contains only numeric characters:
-
-```typescript
-const schema = {
-  phoneNumber: {
-    type: 'string',
-    required: true,
-    numeric: true  // Only numeric characters allowed
-  }
-};
-```
-
-### Additional string formats
-
-<Accordion title="All available string formats">
-  - `email`: Email address format
-  - `url`: URL format
-  - `uuid`: UUID format
-  - `cuid`: CUID format
-  - `datetime`: ISO 8601 datetime format
-  - `ip`: IP address format (v4 or v6)
-  - `numeric`: Only numeric characters
-</Accordion>
+<Tip>
+For advanced patterns like URLs, UUIDs, phone numbers, or other formats, use the `regex` rule with an appropriate pattern.
+</Tip>
 
 ## Number fields
 
@@ -223,22 +154,26 @@ const schema = {
 
 ## Date fields
 
-Date fields support minimum and maximum date validation:
+Date fields support type validation to ensure the value is a Date object:
 
 ```typescript
 const schema = {
   birthDate: {
     type: 'date',
-    required: true,
-    min: new Date('1900-01-01').getTime(),  // Minimum date
-    max: new Date().getTime()  // Maximum date (today)
+    required: true
   }
 };
+
+const data = {
+  birthDate: new Date('1990-01-01')
+};
+
+const errors = validate(schema, data, { lang: 'en' });
 ```
 
-<Warning>
-  Date values must be Date objects, not strings. Date constraints use timestamps (number).
-</Warning>
+<Note>
+  Date values must be JavaScript Date objects, not strings or timestamps. Currently, min/max date validation is not implemented in the active validation engine.
+</Note>
 
 ## Complete example
 

@@ -35,6 +35,18 @@ interface SimpleValidationSchema {
 
 Defines the validation rules for each field in your data object. Each key in the schema corresponds to a field name, and the value describes the validation rules for that field.
 
+<Warning>
+**Currently implemented features**: The type definition above shows all defined properties. However, the current validation engine implements only a subset:
+- **String**: `min`, `max`, `length`, `email`, `regex`
+- **Number**: `min`, `max`
+- **Boolean**: `equals`
+- **Date**: type checking only
+- **Field comparison**: `equals`, `notEquals`
+- **Custom validators**: fully supported
+
+Properties like `url`, `uuid`, `cuid`, `datetime`, `ip`, `startsWith`, `endsWith`, and `numeric` are defined in the TypeScript interface but not yet active in the validation engine.
+</Warning>
+
 ## Field properties
 
 ### Basic properties
@@ -66,39 +78,39 @@ Defines the validation rules for each field in your data object. Each key in the
 </ResponseField>
 
 <ResponseField name="url" type="boolean">
-  If `true`, validates that the string is a valid URL format.
+  **Not yet implemented.** Defined in types but not active in the validation engine. Use `regex` for URL validation.
 </ResponseField>
 
 <ResponseField name="uuid" type="boolean">
-  If `true`, validates that the string is a valid UUID format.
+  **Not yet implemented.** Defined in types but not active in the validation engine. Use `regex` for UUID validation.
 </ResponseField>
 
 <ResponseField name="cuid" type="boolean">
-  If `true`, validates that the string is a valid CUID format.
+  **Not yet implemented.** Defined in types but not active in the validation engine.
 </ResponseField>
 
 <ResponseField name="datetime" type="boolean">
-  If `true`, validates that the string is a valid ISO 8601 datetime format.
+  **Not yet implemented.** Defined in types but not active in the validation engine.
 </ResponseField>
 
 <ResponseField name="ip" type="'v4' | 'v6'">
-  Validates that the string is a valid IP address. Specify `'v4'` for IPv4 or `'v6'` for IPv6.
+  **Not yet implemented.** Defined in types but not active in the validation engine.
 </ResponseField>
 
 <ResponseField name="regex" type="string">
-  A regex pattern as a string. The field value must match this pattern.
+  A regex pattern as a string. The field value must match this pattern. **Fully implemented.**
 </ResponseField>
 
 <ResponseField name="startsWith" type="string">
-  Validates that the string starts with the specified prefix.
+  **Not yet implemented.** Defined in types but not active in the validation engine.
 </ResponseField>
 
 <ResponseField name="endsWith" type="string">
-  Validates that the string ends with the specified suffix.
+  **Not yet implemented.** Defined in types but not active in the validation engine.
 </ResponseField>
 
 <ResponseField name="numeric" type="boolean">
-  If `true`, validates that the string contains only numeric characters.
+  **Not yet implemented.** Defined in types but not active in the validation engine. Use `regex: '^[0-9]+$'` for numeric validation.
 </ResponseField>
 
 ### Field comparison

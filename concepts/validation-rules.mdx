@@ -86,75 +86,6 @@ const schema = {
 The email validation uses the pattern: `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`
 </Note>
 
-### url
-
-Validates URL format.
-
-```typescript
-const schema = {
-  website: {
-    type: 'string',
-    url: true
-  }
-};
-```
-
-### uuid
-
-Validates UUID format.
-
-```typescript
-const schema = {
-  id: {
-    type: 'string',
-    uuid: true
-  }
-};
-```
-
-### cuid
-
-Validates CUID (Collision-resistant Unique Identifier) format.
-
-```typescript
-const schema = {
-  userId: {
-    type: 'string',
-    cuid: true
-  }
-};
-```
-
-### datetime
-
-Validates ISO 8601 datetime format.
-
-```typescript
-const schema = {
-  timestamp: {
-    type: 'string',
-    datetime: true
-  }
-};
-```
-
-### ip
-
-Validates IP address format. Accepts `'v4'` or `'v6'`.
-
-```typescript
-const schema = {
-  serverIp: {
-    type: 'string',
-    ip: 'v4'  // IPv4 format
-  },
-  serverIpV6: {
-    type: 'string',
-    ip: 'v6'  // IPv6 format
-  }
-};
-```
-
 ### regex
 
 Validates against a custom regex pattern. Provide the pattern as a string.
@@ -176,44 +107,9 @@ const schema = {
 Provide regex patterns as strings, not RegExp objects. The string will be converted to a RegExp internally using `new RegExp(pattern)`.
 </Warning>
 
-### startsWith
-
-Checks if the string starts with a specific value.
-
-```typescript
-const schema = {
-  username: {
-    type: 'string',
-    startsWith: 'user_'
-  }
-};
-```
-
-### endsWith
-
-Checks if the string ends with a specific value.
-
-```typescript
-const schema = {
-  filename: {
-    type: 'string',
-    endsWith: '.pdf'
-  }
-};
-```
-
-### numeric
-
-Ensures the string contains only numeric characters.
-
-```typescript
-const schema = {
-  phoneNumber: {
-    type: 'string',
-    numeric: true
-  }
-};
-```
+<Tip>
+The regex rule is particularly useful for custom patterns like alphanumeric validation, phone numbers, or strong passwords.
+</Tip>
 
 ## Number rules
 
@@ -251,37 +147,24 @@ Combine `min` and `max` to create a valid range: `{ type: 'number', min: 0, max:
 
 ## Date rules
 
-Validation rules specific to `type: 'date'` fields.
-
-### min
-
-Minimum date value (as timestamp).
+The `type: 'date'` field type is supported for type checking only. Date values must be JavaScript `Date` objects.
 
 ```typescript
 const schema = {
   appointmentDate: {
     type: 'date',
-    min: Date.now()  // Must be in the future
+    required: true
   }
+};
+
+const data = {
+  appointmentDate: new Date()
 };
 ```
 
-### max
-
-Maximum date value (as timestamp).
-
-```typescript
-const schema = {
-  birthdate: {
-    type: 'date',
-    max: Date.now()  // Must be in the past
-  }
-};
-```
-
-<Info>
-Date validation expects numeric timestamps. Use `Date.now()` or `new Date().getTime()` to get timestamp values.
-</Info>
+<Note>
+Currently, date fields support type validation only. Min/max date validation is not yet implemented in the current version.
+</Note>
 
 ## Boolean rules
 
@@ -526,7 +409,6 @@ const schema = {
     min: 3,
     max: 20,
     regex: '^[a-zA-Z0-9]+$',
-    startsWith: 'user_',
     customValidators: [
       {
         validator: (value) => {
