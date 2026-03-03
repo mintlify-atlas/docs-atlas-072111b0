@@ -1,0 +1,484 @@
+---
+title: Error messages
+description: Understanding PolyVal's error message system and customization options
+---
+
+PolyVal provides a flexible error message system with built-in internationalization and multiple levels of customization. Error messages follow a clear priority system to ensure you have complete control over how validation errors are presented.
+
+## Default messages
+
+PolyVal includes default error messages in English and Turkish:
+
+<CodeGroup>
+
+```typescript English
+// From src/messages/en.ts
+export const enMessages = {
+  required: "This field is required",
+  invalid_type: "Invalid type",
+  
+  string: {
+    min: (min: number) => `Must be at least ${min} characters long`,
+    max: (max: number) => `Must not exceed ${max} characters`,
+    length: (len: number) => `Must be exactly ${len} characters long`,
+    email: "Invalid email address",
+    url: "Invalid URL",
+    uuid: "Invalid UUID",
+    cuid: "Invalid CUID",
+    datetime: "Invalid datetime format",
+    ip: "Invalid IP address",
+    regex: "Invalid format",
+    startsWith: (value: string) => `Must start with "${value}"`,
+    endsWith: (value: string) => `Must end with "${value}"`,
+    numeric: "Must contain only numeric characters"
+  },
+  
+  number: {
+    min: (min: number) => `Must be at least ${min}`,
+    max: (max: number) => `Must not exceed ${max}`
+  },
+  
+  date: {
+    min: (date: Date) => `Must be after ${date.toLocaleDateString()}`,
+    max: (date: Date) => `Must be before ${date.toLocaleDateString()}`
+  },
+  
+  boolean: {
+    true: "Must be checked",
+    false: "Must be unchecked"
+  },
+  
+  equals: (field: string) => `Must match the ${field} field`,
+  notEquals: (field: string) => `Must not match the ${field} field`
+};
+```
+
+```typescript Turkish
+// From src/messages/tr.ts
+export const trMessages = {
+  required: "Bu alan zorunludur",
+  invalid_type: "Geçersiz tip",
+  
+  string: {
+    min: (min: number) => `En az ${min} karakter uzunluğunda olmalıdır`,
+    max: (max: number) => `En fazla ${max} karakter uzunluğunda olmalıdır`,
+    length: (len: number) => `Tam olarak ${len} karakter uzunluğunda olmalıdır`,
+    email: "Geçersiz e-posta adresi",
+    url: "Geçersiz URL",
+    uuid: "Geçersiz UUID",
+    cuid: "Geçersiz CUID",
+    datetime: "Geçersiz tarih/saat formatı",
+    ip: "Geçersiz IP adresi",
+    regex: "Geçersiz format",
+    startsWith: (value: string) => `"${value}" ile başlamalıdır`,
+    endsWith: (value: string) => `"${value}" ile bitmelidir`,
+    numeric: "Sadece sayısal karakterler içermelidir"
+  },
+  
+  number: {
+    min: (min: number) => `En az ${min} olmalıdır`,
+    max: (max: number) => `En fazla ${max} olmalıdır`
+  },
+  
+  date: {
+    min: (date: Date) => `${date.toLocaleDateString()} tarihinden sonra olmalıdır`,
+    max: (date: Date) => `${date.toLocaleDateString()} tarihinden önce olmalıdır`
+  },
+  
+  boolean: {
+    true: "İşaretli olmalıdır",
+    false: "İşaretli olmamalıdır"
+  },
+  
+  equals: (field: string) => `${field} alanı ile eşleşmelidir`,
+  notEquals: (field: string) => `${field} alanı ile eşleşmemelidir`
+};
+```
+
+</CodeGroup>
+
+## Selecting a language
+
+Choose a language by passing the `lang` option:
+
+```typescript
+import { validate } from 'polyval';
+
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3
+  }
+};
+
+const data = { username: 'jo' };
+
+// English messages
+const errorsEN = validate(schema, data, { lang: 'en' });
+// ["Username: Must be at least 3 characters long"]
+
+// Turkish messages
+const errorsTR = validate(schema, data, { lang: 'tr' });
+// ["Username: En az 3 karakter uzunluğunda olmalıdır"]
+```
+
+<Info>
+Supported languages: `'en'` (English) and `'tr'` (Turkish)
+</Info>
+
+## Custom messages
+
+Customize error messages at multiple levels using the `customMessages` option:
+
+```typescript
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    // Your custom messages here
+  }
+});
+```
+
+## Message priority system
+
+PolyVal uses a clear priority order when selecting error messages. Higher priority messages override lower priority ones:
+
+1. **Field-based custom validator messages** - `customMessages.fields[fieldName][customMessageKey]`
+2. **Field-based rule messages** - `customMessages.fields[fieldName].min`, `.email`, etc.
+3. **Global custom validator messages** - `customMessages.custom[messageKey]`
+4. **Type-based rule messages** - `customMessages.string.email`, `customMessages.number.min`, etc.
+5. **General error messages** - `customMessages.required`, `customMessages.invalid_type`
+6. **Default language messages** - Built-in messages for the selected language
+
+<Warning>
+The priority system ensures field-specific messages always take precedence over general messages. This allows you to provide specific guidance for important fields while maintaining default messages for others.
+</Warning>
+
+## Customization levels
+
+### Level 1: General error messages
+
+Override general error messages for all fields:
+
+```typescript
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    required: 'This field cannot be empty',
+    invalid_type: 'Invalid value type'
+  }
+});
+```
+
+### Level 2: Type-based messages
+
+Customize messages for specific validation rules across all fields of a type:
+
+```typescript
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    string: {
+      min: (min) => `Please enter at least ${min} characters`,
+      max: (max) => `Please keep it under ${max} characters`,
+      email: 'Please enter a valid email address',
+      url: 'Please enter a valid URL'
+    },
+    number: {
+      min: (min) => `Value must be at least ${min}`,
+      max: (max) => `Value cannot exceed ${max}`
+    },
+    date: {
+      min: (date) => `Date must be after ${date.toLocaleDateString()}`,
+      max: (date) => `Date must be before ${date.toLocaleDateString()}`
+    }
+  }
+});
+```
+
+**Implementation example from source:**
+
+```typescript
+// From src/index.ts:117-134
+if (typeof fieldConfig.min === 'number' && value.length < fieldConfig.min) {
+  let errorMessage: string;
+  
+  // Priority order
+  if (customMessages?.fields?.[fieldName]?.min) {
+    // Field-based custom message
+    const messageFunc = customMessages.fields[fieldName].min as (min: number) => string;
+    errorMessage = messageFunc(fieldConfig.min);
+  } else if (customMessages?.string?.min) {
+    // Type-based custom message
+    errorMessage = customMessages.string.min(fieldConfig.min);
+  } else {
+    // Default message
+    errorMessage = messages.string.min(fieldConfig.min);
+  }
+  
+  errors.push(`${formattedFieldName}: ${errorMessage}`);
+}
+```
+
+### Level 3: Field comparison messages
+
+Customize messages for field comparison rules:
+
+```typescript
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    equals: (field) => `This field must match the ${field} field`,
+    notEquals: (field) => `This field must not match the ${field} field`
+  }
+});
+```
+
+### Level 4: Field-based messages (highest priority)
+
+Provide custom messages for specific fields:
+
+```typescript
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    fields: {
+      username: {
+        min: (min) => `Username must be at least ${min} characters`,
+        max: (max) => `Username cannot exceed ${max} characters`,
+        required: 'Please choose a username'
+      },
+      email: {
+        required: 'We need your email address',
+        email: 'Please check your email format'
+      },
+      password: {
+        min: (min) => `For security, use at least ${min} characters`,
+        required: 'Password is required'
+      }
+    }
+  }
+});
+```
+
+### Level 5: Custom validator messages
+
+Provide messages for custom validators at global or field level:
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    customValidators: [
+      {
+        validator: (value) => {
+          return value.toLowerCase() !== 'admin' 
+            ? undefined 
+            : 'Default error message';
+        },
+        messageKey: 'noAdminUsername'
+      }
+    ]
+  },
+  email: {
+    type: 'string',
+    customValidators: [
+      {
+        validator: (value) => {
+          return !value.includes('tempmail.com') 
+            ? undefined 
+            : 'Default error';
+        },
+        messageKey: 'noTempEmail'
+      }
+    ]
+  }
+};
+
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    // Global custom validator messages
+    custom: {
+      noAdminUsername: 'Admin username is reserved',
+      noTempEmail: 'Temporary email addresses are not allowed'
+    },
+    
+    // Field-specific custom validator messages (higher priority)
+    fields: {
+      username: {
+        noAdminUsername: 'The username "admin" is reserved for administrators'
+      }
+    }
+  }
+});
+```
+
+**Implementation from source:**
+
+```typescript
+// From src/index.ts:342-361
+if (validator.messageKey) {
+  // Priority order
+  if (customMessages?.fields?.[fieldName]?.[validator.messageKey]) {
+    // Field-based custom message
+    const messageProvider = customMessages.fields[fieldName][validator.messageKey];
+    if (typeof messageProvider === 'function') {
+      errorMessage = (messageProvider as (value: any, data: Record<string, any>) => string)(value, data);
+    } else {
+      errorMessage = messageProvider as string;
+    }
+  } else if (customMessages?.custom?.[validator.messageKey]) {
+    // Global custom message
+    const messageProvider = customMessages.custom[validator.messageKey];
+    if (typeof messageProvider === 'function') {
+      errorMessage = (messageProvider as (value: any, data: Record<string, any>) => string)(value, data);
+    } else {
+      errorMessage = messageProvider as string;
+    }
+  }
+}
+```
+
+<Tip>
+Custom validator messages can be strings or functions. Use functions when you need to include the field value or other data in the error message.
+</Tip>
+
+## Complete example
+
+Here's a comprehensive example demonstrating all customization levels:
+
+```typescript
+import { validate } from 'polyval';
+
+const userSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    customValidators: [
+      {
+        validator: (value) => {
+          return value.toLowerCase() !== 'admin' 
+            ? undefined 
+            : 'Error';
+        },
+        messageKey: 'noAdminUsername'
+      }
+    ]
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  age: {
+    type: 'number',
+    min: 18
+  },
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password'
+  }
+};
+
+const userData = {
+  username: 'admin',
+  email: 'invalid-email',
+  age: 16,
+  password: 'short',
+  confirmPassword: 'different'
+};
+
+const errors = validate(userSchema, userData, {
+  lang: 'en',
+  customMessages: {
+    // Level 1: General messages
+    required: 'This field cannot be empty',
+    
+    // Level 2: Type-based messages
+    string: {
+      min: (min) => `Please enter at least ${min} characters`,
+      email: 'Please provide a valid email address'
+    },
+    number: {
+      min: (min) => `Must be ${min} or greater`
+    },
+    
+    // Level 3: Field comparison messages
+    equals: (field) => `Must match ${field}`,
+    
+    // Level 4: Global custom validator messages
+    custom: {
+      noAdminUsername: 'Admin username is reserved'
+    },
+    
+    // Level 5: Field-specific messages (highest priority)
+    fields: {
+      username: {
+        required: 'Please choose a username',
+        min: (min) => `Username needs at least ${min} characters`,
+        noAdminUsername: 'Sorry, "admin" is a reserved username'
+      },
+      password: {
+        min: (min) => `For your security, use at least ${min} characters`
+      },
+      confirmPassword: {
+        equals: 'Passwords must match exactly'
+      }
+    }
+  }
+});
+
+console.log(errors);
+// [
+//   'Username: Sorry, "admin" is a reserved username',
+//   'Email: Please provide a valid email address',
+//   'Age: Must be 18 or greater',
+//   'Password: For your security, use at least 8 characters',
+//   'ConfirmPassword: Passwords must match exactly'
+// ]
+```
+
+## Error format
+
+All validation errors follow the format:
+
+```
+[FormattedFieldName]: [Error Message]
+```
+
+Field names are automatically formatted with the first letter capitalized:
+
+```typescript
+const schema = {
+  username: { type: 'string', required: true },
+  firstName: { type: 'string', required: true }
+};
+
+const errors = validate(schema, {}, { lang: 'en' });
+// [
+//   "Username: This field is required",
+//   "FirstName: This field is required"
+// ]
+```
+
+**Implementation from source:**
+
+```typescript
+// From src/index.ts:31-32
+// Format field name to start with uppercase letter
+const formattedFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+```
+
+<Note>
+The `validate()` function returns an array of error strings. An empty array means validation passed successfully.
+</Note>

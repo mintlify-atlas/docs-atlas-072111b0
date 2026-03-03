@@ -1,0 +1,314 @@
+---
+title: Field types
+description: Learn about the supported field types in PolyVal and their validation rules
+---
+
+PolyVal supports four basic field types: string, number, boolean, and date. Each type has its own set of validation rules that you can apply.
+
+## String fields
+
+String fields support the most comprehensive set of validation rules, including length constraints, format validation, and pattern matching.
+
+### Basic string validation
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20
+  }
+};
+```
+
+### Length validation
+
+You can validate string length using `min`, `max`, and `length` rules:
+
+<CodeGroup>
+```typescript Minimum length
+const schema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8  // At least 8 characters
+  }
+};
+```
+
+```typescript Maximum length
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    max: 20  // Maximum 20 characters
+  }
+};
+```
+
+```typescript Exact length
+const schema = {
+  zipCode: {
+    type: 'string',
+    required: true,
+    length: 5  // Exactly 5 characters
+  }
+};
+```
+</CodeGroup>
+
+### Format validation
+
+PolyVal provides built-in format validators for common string patterns:
+
+<Tabs>
+  <Tab title="Email">
+    ```typescript
+    const schema = {
+      email: {
+        type: 'string',
+        required: true,
+        email: true  // Validates email format
+      }
+    };
+    ```
+  </Tab>
+  <Tab title="URL">
+    ```typescript
+    const schema = {
+      website: {
+        type: 'string',
+        url: true  // Validates URL format
+      }
+    };
+    ```
+  </Tab>
+  <Tab title="UUID">
+    ```typescript
+    const schema = {
+      id: {
+        type: 'string',
+        uuid: true  // Validates UUID format
+      }
+    };
+    ```
+  </Tab>
+  <Tab title="IP Address">
+    ```typescript
+    const schema = {
+      ipAddress: {
+        type: 'string',
+        ip: 'v4'  // Validates IPv4 or 'v6' for IPv6
+      }
+    };
+    ```
+  </Tab>
+</Tabs>
+
+### Pattern matching
+
+Use regular expressions to validate custom patterns:
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    regex: '^[a-zA-Z0-9_]+$'  // Only alphanumeric and underscore
+  },
+  password: {
+    type: 'string',
+    required: true,
+    min: 8,
+    // Strong password pattern
+    regex: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$'
+  }
+};
+```
+
+<Note>
+  The `regex` rule accepts a string pattern, not a RegExp object. Remember to escape special characters.
+</Note>
+
+### String prefix and suffix
+
+Validate that strings start or end with specific values:
+
+```typescript
+const schema = {
+  protocol: {
+    type: 'string',
+    startsWith: 'https://'  // Must start with https://
+  },
+  filename: {
+    type: 'string',
+    endsWith: '.pdf'  // Must end with .pdf
+  }
+};
+```
+
+### Numeric strings
+
+Validate that a string contains only numeric characters:
+
+```typescript
+const schema = {
+  phoneNumber: {
+    type: 'string',
+    required: true,
+    numeric: true  // Only numeric characters allowed
+  }
+};
+```
+
+### Additional string formats
+
+<Accordion title="All available string formats">
+  - `email`: Email address format
+  - `url`: URL format
+  - `uuid`: UUID format
+  - `cuid`: CUID format
+  - `datetime`: ISO 8601 datetime format
+  - `ip`: IP address format (v4 or v6)
+  - `numeric`: Only numeric characters
+</Accordion>
+
+## Number fields
+
+Number fields support minimum and maximum value validation:
+
+```typescript
+const schema = {
+  age: {
+    type: 'number',
+    required: true,
+    min: 18,  // Minimum value
+    max: 120  // Maximum value
+  },
+  price: {
+    type: 'number',
+    min: 0  // No negative values
+  }
+};
+```
+
+<Info>
+  For number fields, `min` and `max` validate the numeric value, not the length.
+</Info>
+
+## Boolean fields
+
+Boolean fields can be required and optionally validated for specific values:
+
+```typescript
+const schema = {
+  acceptTerms: {
+    type: 'boolean',
+    required: true,
+    equals: true  // Must be true (checked)
+  },
+  newsletter: {
+    type: 'boolean',
+    required: false  // Optional checkbox
+  }
+};
+```
+
+<Tip>
+  Use `equals: true` for checkboxes that must be checked, like terms and conditions.
+</Tip>
+
+## Date fields
+
+Date fields support minimum and maximum date validation:
+
+```typescript
+const schema = {
+  birthDate: {
+    type: 'date',
+    required: true,
+    min: new Date('1900-01-01').getTime(),  // Minimum date
+    max: new Date().getTime()  // Maximum date (today)
+  }
+};
+```
+
+<Warning>
+  Date values must be Date objects, not strings. Date constraints use timestamps (number).
+</Warning>
+
+## Complete example
+
+Here's a complete example from the PolyVal source code demonstrating all field types:
+
+```typescript
+import { validate, SimpleValidationSchema } from 'polyval';
+
+const userRegistrationSchema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    regex: '^[a-zA-Z0-9_]+$'
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  password: {
+    type: 'string',
+    required: true,
+    min: 8,
+    regex: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$'
+  },
+  age: {
+    type: 'number',
+    min: 18
+  },
+  acceptTerms: {
+    type: 'boolean',
+    required: true,
+    equals: true
+  }
+};
+
+const userData = {
+  username: 'johndoe',
+  email: 'john.doe@example.com',
+  password: 'Secure1@Password',
+  age: 25,
+  acceptTerms: true
+};
+
+const errors = validate(userRegistrationSchema, userData, { lang: 'en' });
+
+if (errors.length === 0) {
+  console.log('Validation successful!');
+}
+```
+
+## Type validation
+
+All fields automatically validate their type. If you provide a value that doesn't match the expected type, you'll receive an `invalid_type` error:
+
+```typescript
+const schema = {
+  age: {
+    type: 'number',
+    min: 18
+  }
+};
+
+// This will fail with "Invalid type" error
+const errors = validate(schema, { age: '25' }, { lang: 'en' });
+// Username: Invalid type
+```
+
+<Note>
+  Type validation occurs before any other validation rules are checked.
+</Note>

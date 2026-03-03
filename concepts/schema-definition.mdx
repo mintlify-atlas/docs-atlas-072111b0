@@ -1,0 +1,348 @@
+---
+title: Schema definition
+description: Learn how to define validation schemas using PolyVal's SimpleValidationSchema structure
+---
+
+PolyVal uses a simple, intuitive schema definition structure that makes validation easy to write and maintain. Each field in your schema is defined with a type and optional validation rules.
+
+## Basic structure
+
+A PolyVal schema is a plain JavaScript object where each key represents a field name:
+
+```typescript
+import { validate } from 'polyval';
+
+const userSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  age: {
+    type: 'number',
+    min: 18
+  }
+};
+```
+
+## Supported types
+
+Every field must specify one of four supported types:
+
+- `string` - Text values
+- `number` - Numeric values
+- `boolean` - True/false values
+- `date` - Date objects
+
+<Note>
+The `type` property is required for every field in your schema.
+</Note>
+
+## String validation
+
+String fields support a wide range of validation rules:
+
+### Length validation
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    min: 3,        // Minimum length
+    max: 20        // Maximum length
+  },
+  pin: {
+    type: 'string',
+    length: 6      // Exact length required
+  }
+};
+```
+
+### Format validation
+
+```typescript
+const schema = {
+  email: {
+    type: 'string',
+    email: true    // Email format validation
+  },
+  website: {
+    type: 'string',
+    url: true      // URL format validation
+  },
+  id: {
+    type: 'string',
+    uuid: true     // UUID format validation
+  },
+  userId: {
+    type: 'string',
+    cuid: true     // CUID format validation
+  },
+  timestamp: {
+    type: 'string',
+    datetime: true // ISO 8601 datetime format
+  },
+  serverIp: {
+    type: 'string',
+    ip: 'v4'       // IP address format ('v4' or 'v6')
+  }
+};
+```
+
+### Pattern validation
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    regex: '^[a-zA-Z0-9]+$',  // Only alphanumeric characters
+    startsWith: 'user_',       // Must start with 'user_'
+    endsWith: '_verified'      // Must end with '_verified'
+  },
+  phoneNumber: {
+    type: 'string',
+    numeric: true              // Only numeric characters allowed
+  }
+};
+```
+
+<Warning>
+The `regex` property accepts a string pattern, not a RegExp object. The string will be converted to a RegExp internally.
+</Warning>
+
+## Number validation
+
+Number fields support range validation:
+
+```typescript
+const schema = {
+  age: {
+    type: 'number',
+    required: true,
+    min: 18,       // Minimum value
+    max: 120       // Maximum value
+  },
+  score: {
+    type: 'number',
+    min: 0,
+    max: 100
+  }
+};
+```
+
+## Date validation
+
+Date fields support minimum and maximum date constraints:
+
+```typescript
+const schema = {
+  birthdate: {
+    type: 'date',
+    required: true,
+    max: Date.now(),           // Must be in the past
+    min: new Date('1900-01-01').getTime()
+  },
+  appointmentDate: {
+    type: 'date',
+    min: Date.now()            // Must be in the future
+  }
+};
+```
+
+<Info>
+Date validation uses numeric timestamps. Use `Date.now()` or `new Date().getTime()` to get timestamp values.
+</Info>
+
+## Boolean validation
+
+Boolean fields can be required and checked for specific values:
+
+```typescript
+const schema = {
+  acceptTerms: {
+    type: 'boolean',
+    required: true,
+    equals: true     // Must be true (e.g., checkbox must be checked)
+  },
+  optOut: {
+    type: 'boolean',
+    equals: false    // Must be false
+  }
+};
+```
+
+## Field comparison
+
+Compare a field's value against another field in the data:
+
+```typescript
+const schema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password'         // Must match the 'password' field
+  },
+  oldPassword: {
+    type: 'string',
+    notEquals: 'password'      // Must NOT match the 'password' field
+  }
+};
+```
+
+<Tip>
+Field comparison rules are useful for password confirmation, ensuring unique values, or validating related fields.
+</Tip>
+
+## Custom validators
+
+Add your own validation logic using custom validators:
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    customValidators: [
+      {
+        validator: (value, data) => {
+          // Custom validation logic
+          if (value.toLowerCase() === 'admin') {
+            return 'This username is not available';
+          }
+          return undefined; // Return undefined for successful validation
+        },
+        messageKey: 'noAdminUsername'  // Optional key for custom messages
+      }
+    ]
+  }
+};
+```
+
+### Custom validator structure
+
+Each custom validator is an object with two properties:
+
+- `validator` - A function that receives `(value, data)` and returns:
+  - `string` - Error message if validation fails
+  - `undefined` - If validation passes
+- `messageKey` - Optional key to reference this validator in customMessages
+
+### Accessing other fields
+
+Custom validators receive the entire data object as the second parameter:
+
+```typescript
+const schema = {
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    customValidators: [
+      {
+        validator: (value, data) => {
+          // Access other fields via the data object
+          if (value === data.password + '123') {
+            return 'Password is too predictable';
+          }
+          return undefined;
+        },
+        messageKey: 'predictablePassword'
+      }
+    ]
+  }
+};
+```
+
+## Complete example
+
+Here's a comprehensive schema demonstrating multiple validation rules:
+
+```typescript
+import { validate } from 'polyval';
+
+const userRegistrationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    regex: '^[a-zA-Z0-9]+$',
+    customValidators: [{
+      validator: (value) => {
+        return value.toLowerCase() !== 'admin' 
+          ? undefined 
+          : 'Admin username is not available';
+      },
+      messageKey: 'noAdminUsername'
+    }]
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  age: {
+    type: 'number',
+    min: 18,
+    required: false
+  },
+  password: {
+    type: 'string',
+    required: true,
+    min: 8,
+    regex: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$'
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password'
+  },
+  acceptTerms: {
+    type: 'boolean',
+    required: true,
+    equals: true
+  }
+};
+
+const userData = {
+  username: 'jo',
+  email: 'invalid-email',
+  age: 16,
+  password: '123',
+  confirmPassword: '456',
+  acceptTerms: false
+};
+
+const errors = validate(userRegistrationSchema, userData, { lang: 'en' });
+console.log(errors);
+```
+
+## TypeScript support
+
+PolyVal includes full TypeScript definitions. Import the `SimpleValidationSchema` interface:
+
+```typescript
+import { SimpleValidationSchema, validate } from 'polyval';
+
+const schema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3
+  }
+};
+```
+
+<Note>
+TypeScript will provide autocomplete and type checking for all validation rules based on the field type you specify.
+</Note>

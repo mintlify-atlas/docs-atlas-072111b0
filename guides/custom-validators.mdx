@@ -1,0 +1,487 @@
+---
+title: Custom validators
+description: Create custom validation functions to implement complex validation logic beyond built-in rules
+---
+
+PolyVal allows you to define custom validation functions when built-in rules aren't sufficient for your needs. Custom validators give you full access to the field value and entire form data.
+
+## Basic custom validator
+
+Custom validators are functions that return `undefined` for valid values or an error message string for invalid values:
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    customValidators: [
+      {
+        validator: (value: string) => {
+          if (value.toLowerCase() === 'admin') {
+            return 'Username admin is reserved';
+          }
+          return undefined;  // Valid
+        }
+      }
+    ]
+  }
+};
+```
+
+<Info>
+  Custom validators run after all built-in validation rules pass.
+</Info>
+
+## Validator function signature
+
+Custom validator functions receive two parameters:
+
+```typescript
+validator: (value: any, data: Record<string, any>) => string | undefined
+```
+
+- `value`: The current field's value
+- `data`: The complete form data object
+- **Returns**: `undefined` if valid, or an error message string if invalid
+
+## Real-world example from source
+
+Here's a complete example from the PolyVal source code:
+
+```typescript
+import { validate, SimpleValidationSchema } from 'polyval';
+
+const userRegistrationSchema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    regex: '^[a-zA-Z0-9_]+$',
+    customValidators: [
+      {
+        // Prevent usage of 'admin' as username
+        validator: (value: string) => {
+          return value.toLowerCase() === 'admin' 
+            ? 'Username admin is reserved' 
+            : undefined;
+        },
+        messageKey: 'noAdminUsername'
+      }
+    ]
+  }
+};
+
+const invalidData = {
+  username: 'admin'
+};
+
+const errors = validate(userRegistrationSchema, invalidData, { lang: 'en' });
+// ['Username: Username admin is reserved']
+```
+
+## Using form data in validators
+
+The second parameter gives you access to the entire form data, useful for cross-field validation:
+
+```typescript
+const schema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password',
+    customValidators: [
+      {
+        validator: (value: string, data: Record<string, any>) => {
+          // Prevent predictable password patterns
+          if (value === data.password + '123') {
+            return 'You used a predictable password';
+          }
+          return undefined;
+        },
+        messageKey: 'predictablePassword'
+      }
+    ]
+  }
+};
+```
+
+<Tip>
+  Use the `data` parameter to implement complex validation rules that depend on multiple fields.
+</Tip>
+
+## Message keys
+
+The `messageKey` property allows you to reference the validator in custom messages:
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    customValidators: [
+      {
+        validator: (value: string) => {
+          return value.toLowerCase() === 'admin' 
+            ? 'Username admin is reserved' 
+            : undefined;
+        },
+        messageKey: 'noAdminUsername'  // Key for custom messages
+      }
+    ]
+  }
+};
+
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    custom: {
+      noAdminUsername: 'Admin username cannot be used'
+    }
+  }
+});
+```
+
+<Note>
+  The `messageKey` is optional. If not provided, the validator's return value is used directly.
+</Note>
+
+## Multiple custom validators
+
+You can add multiple custom validators to a single field:
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    customValidators: [
+      {
+        validator: (value: string) => {
+          return value.toLowerCase() === 'admin' 
+            ? 'Username admin is reserved' 
+            : undefined;
+        },
+        messageKey: 'noAdminUsername'
+      },
+      {
+        validator: (value: string) => {
+          const restricted = ['root', 'superuser', 'sysadmin'];
+          return restricted.includes(value.toLowerCase())
+            ? 'This username is restricted'
+            : undefined;
+        },
+        messageKey: 'restrictedUsername'
+      },
+      {
+        validator: (value: string) => {
+          // No consecutive underscores
+          return value.includes('__')
+            ? 'Username cannot contain consecutive underscores'
+            : undefined;
+        }
+      }
+    ]
+  }
+};
+```
+
+<Warning>
+  All custom validators run for each field. If multiple validators fail, only the first error is returned.
+</Warning>
+
+## Advanced validation examples
+
+<Tabs>
+  <Tab title="Password strength">
+    ```typescript
+    const schema = {
+      password: {
+        type: 'string',
+        required: true,
+        min: 8,
+        customValidators: [
+          {
+            validator: (value: string) => {
+              const hasUpper = /[A-Z]/.test(value);
+              const hasLower = /[a-z]/.test(value);
+              const hasNumber = /\d/.test(value);
+              const hasSpecial = /[@$!%*?&]/.test(value);
+              
+              if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+                return 'Password must include uppercase, lowercase, number and special character';
+              }
+              return undefined;
+            },
+            messageKey: 'weakPassword'
+          }
+        ]
+      }
+    };
+    ```
+  </Tab>
+  <Tab title="Age verification">
+    ```typescript
+    const schema = {
+      birthDate: {
+        type: 'date',
+        required: true,
+        customValidators: [
+          {
+            validator: (value: Date) => {
+              const age = Math.floor(
+                (Date.now() - value.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+              );
+              return age < 18 
+                ? 'You must be at least 18 years old' 
+                : undefined;
+            },
+            messageKey: 'underAge'
+          }
+        ]
+      }
+    };
+    ```
+  </Tab>
+  <Tab title="Username blacklist">
+    ```typescript
+    const bannedUsernames = ['admin', 'root', 'superuser', 'moderator'];
+    
+    const schema = {
+      username: {
+        type: 'string',
+        required: true,
+        customValidators: [
+          {
+            validator: (value: string) => {
+              return bannedUsernames.includes(value.toLowerCase())
+                ? 'This username is not available'
+                : undefined;
+            },
+            messageKey: 'bannedUsername'
+          }
+        ]
+      }
+    };
+    ```
+  </Tab>
+  <Tab title="Conditional validation">
+    ```typescript
+    const schema = {
+      country: {
+        type: 'string',
+        required: true
+      },
+      state: {
+        type: 'string',
+        customValidators: [
+          {
+            validator: (value: string, data: Record<string, any>) => {
+              // State is required only for US
+              if (data.country === 'US' && !value) {
+                return 'State is required for US addresses';
+              }
+              return undefined;
+            },
+            messageKey: 'stateRequired'
+          }
+        ]
+      }
+    };
+    ```
+  </Tab>
+</Tabs>
+
+## Customizing validator messages
+
+You can customize messages at different levels:
+
+<CodeGroup>
+```typescript Global custom messages
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    custom: {
+      noAdminUsername: 'Admin username cannot be used',
+      restrictedUsername: 'This username is restricted'
+    }
+  }
+});
+```
+
+```typescript Field-specific custom messages
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    fields: {
+      username: {
+        noAdminUsername: "Sorry, 'admin' is a reserved username",
+        restrictedUsername: 'Please choose a different username'
+      }
+    }
+  }
+});
+```
+
+```typescript Dynamic custom messages
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    custom: {
+      weakPassword: (value: string, data: Record<string, any>) => {
+        return `The password "${value}" is too weak`;
+      }
+    }
+  }
+});
+```
+</CodeGroup>
+
+## Message priority order
+
+When a custom validator fails, the error message is determined by this priority:
+
+1. Field-specific custom message: `customMessages.fields[fieldName][messageKey]`
+2. Global custom message: `customMessages.custom[messageKey]`
+3. Validator's return value
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    customValidators: [
+      {
+        validator: (value: string) => {
+          return value.toLowerCase() === 'admin' 
+            ? 'Default: Username admin is reserved'  // Priority 3
+            : undefined;
+        },
+        messageKey: 'noAdminUsername'
+      }
+    ]
+  }
+};
+
+const errors = validate(schema, { username: 'admin' }, {
+  lang: 'en',
+  customMessages: {
+    custom: {
+      noAdminUsername: 'Global: Admin username not allowed'  // Priority 2
+    },
+    fields: {
+      username: {
+        noAdminUsername: 'Field: Admin username is reserved'  // Priority 1 (used)
+      }
+    }
+  }
+});
+// ['Username: Field: Admin username is reserved']
+```
+
+<Info>
+  See [Customizing messages](/guides/customizing-messages) for complete details on message customization.
+</Info>
+
+## Complete example
+
+Here's the complete example from the PolyVal source demonstrating custom validators:
+
+```typescript
+import { validate, SimpleValidationSchema } from 'polyval';
+
+const userRegistrationSchema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    regex: '^[a-zA-Z0-9_]+$',
+    customValidators: [
+      {
+        validator: (value: string) => {
+          return value.toLowerCase() === 'admin' 
+            ? 'Username admin is reserved' 
+            : undefined;
+        },
+        messageKey: 'noAdminUsername'
+      }
+    ]
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  password: {
+    type: 'string',
+    required: true,
+    min: 8,
+    regex: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$'
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password'
+  },
+  age: {
+    type: 'number',
+    min: 18
+  },
+  acceptTerms: {
+    type: 'boolean',
+    required: true,
+    equals: true
+  }
+};
+
+const customMessages = {
+  fields: {
+    username: {
+      noAdminUsername: "Sorry, 'admin' is a reserved username"
+    }
+  }
+};
+
+const invalidData = {
+  username: 'admin',
+  email: 'user@example.com',
+  password: 'Secure1@Password',
+  confirmPassword: 'Secure1@Password',
+  age: 25,
+  acceptTerms: true
+};
+
+const errors = validate(userRegistrationSchema, invalidData, { 
+  lang: 'en',
+  customMessages
+});
+
+errors.forEach((error: string) => console.log(`- ${error}`));
+// - Username: Sorry, 'admin' is a reserved username
+```
+
+## Best practices
+
+<Accordion title="Custom validator best practices">
+  1. **Return undefined for valid values**: Always return `undefined`, not `null` or empty string, for valid values.
+  
+  2. **Use messageKey**: Provide a `messageKey` for easier message customization and better code organization.
+  
+  3. **Keep validators focused**: Each validator should check one specific rule. Use multiple validators instead of complex conditional logic.
+  
+  4. **Consider performance**: Custom validators run on every validation. Avoid expensive operations like API calls.
+  
+  5. **Access form data carefully**: The `data` parameter contains all form fields. Check for field existence before accessing.
+  
+  6. **Clear error messages**: Return descriptive error messages that help users understand what went wrong.
+  
+  7. **Type safety**: Use TypeScript to ensure your validator functions are type-safe.
+</Accordion>

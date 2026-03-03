@@ -1,0 +1,338 @@
+---
+title: Field comparison
+description: Learn how to validate fields against other fields using equals and notEquals rules
+---
+
+PolyVal provides field comparison rules that allow you to validate a field's value against another field in the same form. This is useful for password confirmation, ensuring unique values, and implementing complex validation logic.
+
+## Equals validation
+
+The `equals` rule validates that a field's value matches another field's value. This is commonly used for password confirmation fields.
+
+### Password confirmation example
+
+Here's a real example from the PolyVal source code:
+
+```typescript
+import { validate, SimpleValidationSchema } from 'polyval';
+
+const schema: SimpleValidationSchema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password'  // Must match the password field
+  }
+};
+
+const data = {
+  password: 'Secure1@Password',
+  confirmPassword: 'Secure1@Password'
+};
+
+const errors = validate(schema, data, { lang: 'en' });
+// No errors - passwords match
+```
+
+### How equals works
+
+The `equals` rule compares the field's value with the value of the specified field:
+
+```typescript
+const schema = {
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  confirmEmail: {
+    type: 'string',
+    required: true,
+    equals: 'email'  // Must match the email field
+  }
+};
+```
+
+<Info>
+  The comparison is strict and case-sensitive. The values must match exactly.
+</Info>
+
+## Equals with boolean values
+
+For boolean fields, `equals` can validate that the value is specifically `true` or `false`:
+
+```typescript
+const schema = {
+  acceptTerms: {
+    type: 'boolean',
+    required: true,
+    equals: true  // Must be checked (true)
+  }
+};
+
+const validData = {
+  acceptTerms: true
+};
+
+const invalidData = {
+  acceptTerms: false
+};
+
+const errors = validate(schema, invalidData, { lang: 'en' });
+// AcceptTerms: Must be checked
+```
+
+<Tip>
+  Use `equals: true` for terms and conditions checkboxes that must be accepted.
+</Tip>
+
+## NotEquals validation
+
+The `notEquals` rule validates that a field's value is different from another field's value. This is useful when you need to ensure fields have distinct values.
+
+### Password change example
+
+Ensure the new password is different from the old password:
+
+```typescript
+const schema = {
+  oldPassword: {
+    type: 'string',
+    required: true
+  },
+  password: {
+    type: 'string',
+    required: true,
+    min: 8,
+    notEquals: 'oldPassword'  // Must not match oldPassword
+  }
+};
+
+const invalidData = {
+  oldPassword: 'OldPass123!',
+  password: 'OldPass123!'  // Same as old password
+};
+
+const errors = validate(schema, invalidData, { lang: 'en' });
+// Password: Must not match the oldPassword field
+```
+
+### Multiple field comparison
+
+You can use field comparison rules on multiple fields:
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20
+  },
+  displayName: {
+    type: 'string',
+    required: true,
+    notEquals: 'username'  // Display name must differ from username
+  }
+};
+```
+
+## Validation order
+
+Field comparison validation occurs after basic type and format validation:
+
+<CodeGroup>
+```typescript Valid example
+const schema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    min: 8,
+    equals: 'password'
+  }
+};
+
+const data = {
+  password: 'Secure1@Password',
+  confirmPassword: 'Secure1@Password'
+};
+
+const errors = validate(schema, data, { lang: 'en' });
+// [] - No errors
+```
+
+```typescript Invalid example
+const schema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password'
+  }
+};
+
+const data = {
+  password: 'Secure1@Password',
+  confirmPassword: 'DifferentPassword'
+};
+
+const errors = validate(schema, data, { lang: 'en' });
+// ['ConfirmPassword: Must match the password field']
+```
+</CodeGroup>
+
+## Error messages
+
+Default error messages for field comparison are available in both English and Turkish:
+
+<Tabs>
+  <Tab title="English">
+    ```typescript
+    equals: (field: string) => `Must match the ${field} field`
+    notEquals: (field: string) => `Must not match the ${field} field`
+    ```
+  </Tab>
+  <Tab title="Turkish">
+    ```typescript
+    equals: (field: string) => `${field} alanı ile eşleşmelidir`
+    notEquals: (field: string) => `${field} alanı ile eşleşmemelidir`
+    ```
+  </Tab>
+</Tabs>
+
+### Customizing comparison messages
+
+You can customize field comparison error messages:
+
+<CodeGroup>
+```typescript Global customization
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    equals: (field) => `This field must match ${field}`,
+    notEquals: (field) => `This field must be different from ${field}`
+  }
+});
+```
+
+```typescript Field-specific customization
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    fields: {
+      confirmPassword: {
+        equals: 'Passwords do not match'
+      },
+      password: {
+        notEquals: 'New password must be different from old password'
+      }
+    }
+  }
+});
+```
+</CodeGroup>
+
+<Note>
+  Field-specific messages have higher priority than global comparison messages. See [Customizing messages](/guides/customizing-messages) for the complete priority order.
+</Note>
+
+## Complete registration example
+
+Here's a complete user registration example from the PolyVal source code:
+
+```typescript
+import { validate, SimpleValidationSchema } from 'polyval';
+
+const userRegistrationSchema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    regex: '^[a-zA-Z0-9_]+$'
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  password: {
+    type: 'string',
+    required: true,
+    min: 8,
+    regex: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$'
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password'  // Must match password
+  },
+  age: {
+    type: 'number',
+    min: 18
+  },
+  acceptTerms: {
+    type: 'boolean',
+    required: true,
+    equals: true  // Must be checked
+  }
+};
+
+const validData = {
+  username: 'johndoe',
+  email: 'john.doe@example.com',
+  password: 'Secure1@Password',
+  confirmPassword: 'Secure1@Password',
+  age: 25,
+  acceptTerms: true
+};
+
+const errors = validate(userRegistrationSchema, validData, { 
+  lang: 'en',
+  customMessages: {
+    fields: {
+      confirmPassword: {
+        equals: 'Passwords do not match'
+      },
+      acceptTerms: {
+        equals: 'You must accept the terms and conditions'
+      }
+    }
+  }
+});
+
+if (errors.length === 0) {
+  console.log('Registration successful!');
+}
+```
+
+## Best practices
+
+<Accordion title="Field comparison best practices">
+  1. **Always validate both fields**: Even though `confirmPassword` uses `equals`, still mark it as `required` to ensure it's not empty.
+  
+  2. **Use field-specific messages**: Customize error messages for better user experience, especially for password confirmation.
+  
+  3. **Order matters**: The referenced field (e.g., `password`) should appear before the comparing field (e.g., `confirmPassword`) in your schema for logical flow.
+  
+  4. **Type consistency**: Both fields being compared should have the same type. The library validates types before comparison.
+  
+  5. **Case sensitivity**: Comparisons are case-sensitive. Use custom validators if you need case-insensitive comparison.
+</Accordion>
+
+<Warning>
+  Field comparison only validates against fields in the same data object. You cannot compare across nested objects or arrays.
+</Warning>

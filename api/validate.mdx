@@ -1,0 +1,124 @@
+---
+title: validate
+description: Validate data according to a schema and return error messages
+---
+
+## Function signature
+
+```typescript
+function validate(
+  schema: SimpleValidationSchema,
+  data: Record<string, any>,
+  options: ValidationOptions
+): string[]
+```
+
+Validates data according to the specified schema and returns an array of error messages. Returns an empty array if validation succeeds.
+
+## Parameters
+
+<ParamField path="schema" type="SimpleValidationSchema" required>
+  The validation schema that defines the structure and rules for your data. See [SimpleValidationSchema](/api/types/simple-validation-schema) for details.
+</ParamField>
+
+<ParamField path="data" type="Record<string, any>" required>
+  The data object to validate. Each key should correspond to a field defined in the schema.
+</ParamField>
+
+<ParamField path="options" type="ValidationOptions" required>
+  Validation options including language and custom error messages. See [ValidationOptions](/api/types/validation-options) for details.
+  
+  <Expandable title="properties">
+    <ParamField path="options.lang" type="string" required>
+      The language code for error messages (e.g., `"en"`, `"es"`, `"fr"`).
+    </ParamField>
+    
+    <ParamField path="options.customMessages" type="CustomMessages">
+      Custom error messages to override defaults. See [CustomMessages](/api/types/custom-messages) for details.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+<ResponseField name="errors" type="string[]">
+  An array of error messages. Each error is formatted as `"FieldName: error message"`. Returns an empty array if validation succeeds.
+</ResponseField>
+
+## Examples
+
+### Basic validation
+
+```typescript
+import { validate } from 'polyval';
+
+const schema = {
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  age: {
+    type: 'number',
+    required: true,
+    min: 18
+  }
+};
+
+const data = {
+  email: 'user@example.com',
+  age: 25
+};
+
+const errors = validate(schema, data, { lang: 'en' });
+console.log(errors); // []
+```
+
+### Validation with errors
+
+```typescript
+const data = {
+  email: 'invalid-email',
+  age: 15
+};
+
+const errors = validate(schema, data, { lang: 'en' });
+console.log(errors);
+// [
+//   "Email: Must be a valid email address",
+//   "Age: Must be at least 18"
+// ]
+```
+
+### Validation with custom messages
+
+```typescript
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    required: 'This field is mandatory',
+    string: {
+      email: 'Please enter a valid email address'
+    },
+    number: {
+      min: (min) => `You must be at least ${min} years old`
+    }
+  }
+});
+```
+
+<Note>
+  The validate function automatically formats field names by capitalizing the first letter in error messages.
+</Note>
+
+## Error handling
+
+If an unexpected error occurs during validation, the function returns a single-element array:
+
+```typescript
+['An unexpected validation error occurred']
+```
+
+<Warning>
+  The validate function catches all exceptions and returns a generic error message. Check the returned array to determine if validation succeeded (empty array) or failed (non-empty array).
+</Warning>

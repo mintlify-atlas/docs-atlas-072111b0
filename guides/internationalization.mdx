@@ -1,0 +1,448 @@
+---
+title: Internationalization
+description: Learn how to use PolyVal's built-in multilingual support and add custom languages
+---
+
+PolyVal provides built-in support for multiple languages, making it easy to display validation error messages in your users' preferred language. The library currently includes English and Turkish messages, with a simple system for adding more languages.
+
+## Built-in languages
+
+PolyVal comes with two languages out of the box:
+
+- **English (en)**: Default language
+- **Turkish (tr)**: Full Turkish translations
+
+### Using a language
+
+Specify the language using the `lang` option when calling `validate`:
+
+<CodeGroup>
+```typescript English
+import { validate } from 'polyval';
+
+const schema = {
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  }
+};
+
+const errors = validate(schema, { email: 'invalid' }, { lang: 'en' });
+// ['Email: Invalid email address']
+```
+
+```typescript Turkish
+import { validate } from 'polyval';
+
+const schema = {
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  }
+};
+
+const errors = validate(schema, { email: 'invalid' }, { lang: 'tr' });
+// ['Email: Geçersiz e-posta adresi']
+```
+</CodeGroup>
+
+<Info>
+  If you specify an unsupported language code, PolyVal automatically falls back to English.
+</Info>
+
+## Language message structure
+
+Here's the complete message structure from the PolyVal source code:
+
+<Tabs>
+  <Tab title="English (en)">
+    ```typescript
+    export const enMessages = {
+      required: "This field is required",
+      invalid_type: "Invalid type",
+      
+      // String validators
+      string: {
+        min: (min: number) => `Must be at least ${min} characters long`,
+        max: (max: number) => `Must not exceed ${max} characters`,
+        length: (len: number) => `Must be exactly ${len} characters long`,
+        email: "Invalid email address",
+        url: "Invalid URL",
+        uuid: "Invalid UUID",
+        cuid: "Invalid CUID",
+        datetime: "Invalid datetime format",
+        ip: "Invalid IP address",
+        regex: "Invalid format",
+        startsWith: (value: string) => `Must start with "${value}"`,
+        endsWith: (value: string) => `Must end with "${value}"`,
+        numeric: "Must contain only numeric characters"
+      },
+      
+      // Number validators
+      number: {
+        min: (min: number) => `Must be at least ${min}`,
+        max: (max: number) => `Must not exceed ${max}`
+      },
+      
+      // Date validators
+      date: {
+        min: (date: Date) => `Must be after ${date.toLocaleDateString()}`,
+        max: (date: Date) => `Must be before ${date.toLocaleDateString()}`
+      },
+      
+      // Boolean validators
+      boolean: {
+        true: "Must be checked",
+        false: "Must be unchecked"
+      },
+      
+      // Relation validators
+      equals: (field: string) => `Must match the ${field} field`,
+      notEquals: (field: string) => `Must not match the ${field} field`
+    };
+    ```
+  </Tab>
+  <Tab title="Turkish (tr)">
+    ```typescript
+    export const trMessages = {
+      required: "Bu alan zorunludur",
+      invalid_type: "Geçersiz tip",
+      
+      // String validators
+      string: {
+        min: (min: number) => `En az ${min} karakter uzunluğunda olmalıdır`,
+        max: (max: number) => `En fazla ${max} karakter uzunluğunda olmalıdır`,
+        length: (len: number) => `Tam olarak ${len} karakter uzunluğunda olmalıdır`,
+        email: "Geçersiz e-posta adresi",
+        url: "Geçersiz URL",
+        uuid: "Geçersiz UUID",
+        cuid: "Geçersiz CUID",
+        datetime: "Geçersiz tarih/saat formatı",
+        ip: "Geçersiz IP adresi",
+        regex: "Geçersiz format",
+        startsWith: (value: string) => `"${value}" ile başlamalıdır`,
+        endsWith: (value: string) => `"${value}" ile bitmelidir`,
+        numeric: "Sadece sayısal karakterler içermelidir"
+      },
+      
+      // Number validators
+      number: {
+        min: (min: number) => `En az ${min} olmalıdır`,
+        max: (max: number) => `En fazla ${max} olmalıdır`
+      },
+      
+      // Date validators
+      date: {
+        min: (date: Date) => `${date.toLocaleDateString()} tarihinden sonra olmalıdır`,
+        max: (date: Date) => `${date.toLocaleDateString()} tarihinden önce olmalıdır`
+      },
+      
+      // Boolean validators
+      boolean: {
+        true: "İşaretli olmalıdır",
+        false: "İşaretli olmamalıdır"
+      },
+      
+      // Relation validators
+      equals: (field: string) => `${field} alanı ile eşleşmelidir`,
+      notEquals: (field: string) => `${field} alanı ile eşleşmemelidir`
+    };
+    ```
+  </Tab>
+</Tabs>
+
+## Comparing languages
+
+Here's a side-by-side comparison from the PolyVal example:
+
+```typescript
+import { validate, SimpleValidationSchema } from 'polyval';
+
+const userSchema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  age: {
+    type: 'number',
+    min: 18
+  }
+};
+
+const invalidData = {
+  username: 'a',
+  email: 'invalid-email',
+  age: 16
+};
+
+console.log('=== ENGLISH ===');
+const errorsEN = validate(userSchema, invalidData, { lang: 'en' });
+errorsEN.forEach((error: string) => console.log(`- ${error}`));
+// - Username: Must be at least 3 characters long
+// - Email: Invalid email address
+// - Age: Must be at least 18
+
+console.log('\n=== TURKISH ===');
+const errorsTR = validate(userSchema, invalidData, { lang: 'tr' });
+errorsTR.forEach((error: string) => console.log(`- ${error}`));
+// - Username: En az 3 karakter uzunluğunda olmalıdır
+// - Email: Geçersiz e-posta adresi
+// - Age: En az 18 olmalıdır
+```
+
+## Adding a new language
+
+You can add support for additional languages by creating a message dictionary and registering it with PolyVal.
+
+### Step 1: Create message dictionary
+
+Create a new file for your language messages, following the structure of existing languages:
+
+```typescript
+// src/messages/es.ts
+export const esMessages = {
+  required: "Este campo es obligatorio",
+  invalid_type: "Tipo inválido",
+  
+  string: {
+    min: (min: number) => `Debe tener al menos ${min} caracteres`,
+    max: (max: number) => `No debe exceder ${max} caracteres`,
+    length: (len: number) => `Debe tener exactamente ${len} caracteres`,
+    email: "Dirección de correo electrónico inválida",
+    url: "URL inválida",
+    uuid: "UUID inválido",
+    cuid: "CUID inválido",
+    datetime: "Formato de fecha/hora inválido",
+    ip: "Dirección IP inválida",
+    regex: "Formato inválido",
+    startsWith: (value: string) => `Debe comenzar con "${value}"`,
+    endsWith: (value: string) => `Debe terminar con "${value}"`,
+    numeric: "Debe contener solo caracteres numéricos"
+  },
+  
+  number: {
+    min: (min: number) => `Debe ser al menos ${min}`,
+    max: (max: number) => `No debe exceder ${max}`
+  },
+  
+  date: {
+    min: (date: Date) => `Debe ser después de ${date.toLocaleDateString()}`,
+    max: (date: Date) => `Debe ser antes de ${date.toLocaleDateString()}`
+  },
+  
+  boolean: {
+    true: "Debe estar marcado",
+    false: "No debe estar marcado"
+  },
+  
+  equals: (field: string) => `Debe coincidir con el campo ${field}`,
+  notEquals: (field: string) => `No debe coincidir con el campo ${field}`
+};
+```
+
+### Step 2: Register the language
+
+Add your language to the messages registry:
+
+```typescript
+// src/messages/index.ts
+import { enMessages } from './en';
+import { trMessages } from './tr';
+import { esMessages } from './es';  // Import your language
+
+export type MessageDictionary = typeof enMessages;
+
+export const messages: Record<string, MessageDictionary> = {
+  en: enMessages,
+  tr: trMessages,
+  es: esMessages  // Register your language
+};
+
+export const DEFAULT_LANGUAGE = 'en';
+
+export function getMessages(lang: string): MessageDictionary {
+  return messages[lang] || messages[DEFAULT_LANGUAGE];
+}
+```
+
+### Step 3: Use your new language
+
+```typescript
+import { validate } from 'polyval';
+
+const schema = {
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  }
+};
+
+const errors = validate(schema, { email: 'invalid' }, { lang: 'es' });
+// ['Email: Dirección de correo electrónico inválida']
+```
+
+<Note>
+  Contributing your language translations to the PolyVal repository helps other developers. Consider submitting a pull request!
+</Note>
+
+## Fallback behavior
+
+PolyVal's fallback system ensures users always see error messages:
+
+```typescript
+// src/messages/index.ts
+export const DEFAULT_LANGUAGE = 'en';
+
+export function getMessages(lang: string): MessageDictionary {
+  return messages[lang] || messages[DEFAULT_LANGUAGE];
+}
+```
+
+If you specify an unsupported language, PolyVal falls back to English:
+
+```typescript
+const errors = validate(schema, data, { lang: 'fr' });
+// Falls back to English messages
+```
+
+## Combining with custom messages
+
+You can use any language as a base and override specific messages:
+
+```typescript
+const errors = validate(schema, data, {
+  lang: 'tr',  // Use Turkish as base
+  customMessages: {
+    // Override specific Turkish messages
+    required: 'Lütfen bu alanı doldurun',
+    string: {
+      email: 'Geçerli bir e-posta adresi girin'
+    },
+    fields: {
+      username: {
+        min: (min: number) => `Kullanıcı adı en az ${min} karakter olmalı`
+      }
+    }
+  }
+});
+```
+
+<Tip>
+  Start with a built-in language and customize only the messages you need. This is easier than creating a complete language dictionary.
+</Tip>
+
+## Dynamic language selection
+
+You can dynamically select languages based on user preferences:
+
+```typescript
+function validateUserData(data: any, userLocale: string) {
+  // Map user locale to supported language
+  const langMap: Record<string, string> = {
+    'en-US': 'en',
+    'en-GB': 'en',
+    'tr-TR': 'tr',
+    'es-ES': 'es'
+  };
+  
+  const lang = langMap[userLocale] || 'en';
+  
+  return validate(schema, data, { lang });
+}
+
+// Usage
+const errors = validateUserData(userData, navigator.language);
+```
+
+## Complete multilingual example
+
+Here's the complete example from the PolyVal source demonstrating multilingual support:
+
+```typescript
+import { validate, SimpleValidationSchema } from 'polyval';
+
+const userRegistrationSchema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    regex: '^[a-zA-Z0-9_]+$'
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  age: {
+    type: 'number',
+    min: 18
+  }
+};
+
+const invalidData = {
+  username: 'a',
+  email: 'invalid-email',
+  password: 'weak',
+  age: 16
+};
+
+console.log('=== TURKISH ERROR MESSAGES ===');
+const errorsTR = validate(userRegistrationSchema, invalidData, { lang: 'tr' });
+errorsTR.forEach((error: string) => console.log(`- ${error}`));
+
+console.log('\n=== CUSTOM ENGLISH ERROR MESSAGES ===');
+const customMessages = {
+  required: "This field cannot be empty",
+  string: {
+    min: (min: number) => `At least ${min} characters required`,
+    email: "Please enter a valid email address"
+  },
+  number: {
+    min: (min: number) => `Must be at least ${min} years old`
+  }
+};
+
+const errorsEN = validate(userRegistrationSchema, invalidData, { 
+  lang: 'en',
+  customMessages
+});
+errorsEN.forEach((error: string) => console.log(`- ${error}`));
+```
+
+## Best practices
+
+<Accordion title="Internationalization best practices">
+  1. **Set a default language**: Always specify a `lang` option, even if using English.
+  
+  2. **Match message structure**: When adding languages, ensure your message dictionary matches the structure of `enMessages`.
+  
+  3. **Test all messages**: Verify that all message functions (like `min`, `max`) work correctly with your language.
+  
+  4. **Consider date formatting**: The `date.min` and `date.max` messages use `toLocaleDateString()`, which automatically formats dates according to locale.
+  
+  5. **Use Unicode properly**: Ensure your message files are saved with UTF-8 encoding to support special characters.
+  
+  6. **Document custom languages**: If adding languages to your project, document which languages are supported.
+  
+  7. **Combine with custom messages**: Use language files for general messages and `customMessages` for application-specific text.
+</Accordion>
+
+<Warning>
+  Language files should be type-safe. Export your messages using the same structure as `enMessages` to ensure TypeScript compatibility.
+</Warning>

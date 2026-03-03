@@ -1,0 +1,280 @@
+---
+title: SimpleValidationSchema
+description: Schema interface for defining validation rules
+---
+
+## Type definition
+
+```typescript
+interface SimpleValidationSchema {
+  [fieldName: string]: {
+    type: 'string' | 'number' | 'boolean' | 'date';
+    required?: boolean;
+    min?: number;
+    max?: number;
+    length?: number;
+    email?: boolean;
+    url?: boolean;
+    uuid?: boolean;
+    cuid?: boolean;
+    datetime?: boolean;
+    ip?: 'v4' | 'v6';
+    regex?: string;
+    startsWith?: string;
+    endsWith?: string;
+    numeric?: boolean;
+    equals?: string | boolean;
+    notEquals?: string;
+    customValidators?: Array<{
+      validator: (value: any, data: Record<string, any>) => string | undefined;
+      messageKey?: string;
+    }>;
+  };
+}
+```
+
+Defines the validation rules for each field in your data object. Each key in the schema corresponds to a field name, and the value describes the validation rules for that field.
+
+## Field properties
+
+### Basic properties
+
+<ResponseField name="type" type="'string' | 'number' | 'boolean' | 'date'" required>
+  The expected data type for this field.
+</ResponseField>
+
+<ResponseField name="required" type="boolean" default={false}>
+  Whether the field is required. If `true`, the field must be present and not empty.
+</ResponseField>
+
+### String validations
+
+<ResponseField name="min" type="number">
+  For strings: minimum length. For numbers: minimum value. For dates: minimum date.
+</ResponseField>
+
+<ResponseField name="max" type="number">
+  For strings: maximum length. For numbers: maximum value. For dates: maximum date.
+</ResponseField>
+
+<ResponseField name="length" type="number">
+  Exact string length required.
+</ResponseField>
+
+<ResponseField name="email" type="boolean">
+  If `true`, validates that the string is a valid email address format.
+</ResponseField>
+
+<ResponseField name="url" type="boolean">
+  If `true`, validates that the string is a valid URL format.
+</ResponseField>
+
+<ResponseField name="uuid" type="boolean">
+  If `true`, validates that the string is a valid UUID format.
+</ResponseField>
+
+<ResponseField name="cuid" type="boolean">
+  If `true`, validates that the string is a valid CUID format.
+</ResponseField>
+
+<ResponseField name="datetime" type="boolean">
+  If `true`, validates that the string is a valid ISO 8601 datetime format.
+</ResponseField>
+
+<ResponseField name="ip" type="'v4' | 'v6'">
+  Validates that the string is a valid IP address. Specify `'v4'` for IPv4 or `'v6'` for IPv6.
+</ResponseField>
+
+<ResponseField name="regex" type="string">
+  A regex pattern as a string. The field value must match this pattern.
+</ResponseField>
+
+<ResponseField name="startsWith" type="string">
+  Validates that the string starts with the specified prefix.
+</ResponseField>
+
+<ResponseField name="endsWith" type="string">
+  Validates that the string ends with the specified suffix.
+</ResponseField>
+
+<ResponseField name="numeric" type="boolean">
+  If `true`, validates that the string contains only numeric characters.
+</ResponseField>
+
+### Field comparison
+
+<ResponseField name="equals" type="string | boolean">
+  For strings/numbers: the name of another field that this field must equal.
+  
+  For booleans: the exact boolean value required (`true` or `false`).
+</ResponseField>
+
+<ResponseField name="notEquals" type="string">
+  The name of another field that this field must not equal.
+</ResponseField>
+
+### Custom validators
+
+<ResponseField name="customValidators" type="Array<object>">
+  An array of custom validation functions for advanced validation logic.
+  
+  <Expandable title="Array element structure">
+    <ResponseField name="validator" type="(value: any, data: Record<string, any>) => string | undefined" required>
+      A function that receives the field value and the entire data object. Return an error message string if validation fails, or `undefined` if validation succeeds.
+    </ResponseField>
+    
+    <ResponseField name="messageKey" type="string">
+      Optional key to reference this validator in the `customMessages` object. Allows you to provide custom error messages for this validator.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Basic schema
+
+```typescript
+const schema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  age: {
+    type: 'number',
+    required: true,
+    min: 18
+  }
+};
+```
+
+### String format validations
+
+```typescript
+const schema: SimpleValidationSchema = {
+  website: {
+    type: 'string',
+    url: true
+  },
+  userId: {
+    type: 'string',
+    uuid: true
+  },
+  phoneNumber: {
+    type: 'string',
+    regex: '^\\+?[1-9]\\d{1,14}$'
+  },
+  zipCode: {
+    type: 'string',
+    numeric: true,
+    length: 5
+  }
+};
+```
+
+### Field comparison
+
+```typescript
+const schema: SimpleValidationSchema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password'
+  },
+  acceptTerms: {
+    type: 'boolean',
+    equals: true
+  }
+};
+```
+
+### Custom validators
+
+```typescript
+const schema: SimpleValidationSchema = {
+  password: {
+    type: 'string',
+    required: true,
+    customValidators: [
+      {
+        validator: (value) => {
+          if (!/[A-Z]/.test(value)) {
+            return 'Must contain at least one uppercase letter';
+          }
+          return undefined;
+        },
+        messageKey: 'passwordUppercase'
+      },
+      {
+        validator: (value) => {
+          if (!/[0-9]/.test(value)) {
+            return 'Must contain at least one number';
+          }
+          return undefined;
+        },
+        messageKey: 'passwordNumber'
+      }
+    ]
+  },
+  birthYear: {
+    type: 'number',
+    required: true,
+    customValidators: [
+      {
+        validator: (value) => {
+          const currentYear = new Date().getFullYear();
+          if (value > currentYear) {
+            return 'Birth year cannot be in the future';
+          }
+          return undefined;
+        }
+      }
+    ]
+  }
+};
+```
+
+<Note>
+  Custom validators receive both the field value and the entire data object, allowing for complex cross-field validations.
+</Note>
+
+### Advanced cross-field validation
+
+```typescript
+const schema: SimpleValidationSchema = {
+  startDate: {
+    type: 'date',
+    required: true
+  },
+  endDate: {
+    type: 'date',
+    required: true,
+    customValidators: [
+      {
+        validator: (value, data) => {
+          if (data.startDate && value < data.startDate) {
+            return 'End date must be after start date';
+          }
+          return undefined;
+        },
+        messageKey: 'dateRange'
+      }
+    ]
+  }
+};
+```
+
+<Warning>
+  When using `regex`, provide the pattern as a string, not as a RegExp object. The pattern will be converted to a RegExp internally.
+</Warning>

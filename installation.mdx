@@ -1,0 +1,109 @@
+---
+title: Installation
+description: Install PolyVal in your JavaScript or TypeScript project
+---
+
+## Prerequisites
+
+Before installing PolyVal, ensure you have:
+
+- Node.js version 14 or higher
+- npm, yarn, or pnpm package manager
+
+## Install PolyVal
+
+Choose your preferred package manager to install PolyVal:
+
+<CodeGroup>
+
+```bash npm
+npm install polyval
+```
+
+```bash yarn
+yarn add polyval
+```
+
+```bash pnpm
+pnpm add polyval
+```
+
+</CodeGroup>
+
+<Info>
+  PolyVal automatically includes Zod as a dependency, so you don't need to install it separately.
+</Info>
+
+## Verify installation
+
+Create a simple test file to verify that PolyVal is installed correctly:
+
+```typescript test.ts
+import { validate } from 'polyval';
+
+const schema = {
+  name: {
+    type: 'string',
+    required: true
+  }
+};
+
+const data = { name: 'John' };
+const errors = validate(schema, data, { lang: 'en' });
+
+console.log(errors.length === 0 ? 'PolyVal is working!' : 'Validation failed');
+```
+
+<Steps>
+  <Step title="Save the file">
+    Save the code above as `test.ts` (or `test.js` for JavaScript)
+  </Step>
+  
+  <Step title="Run the file">
+    Execute the file using Node.js or your TypeScript runner:
+    
+    ```bash
+    npx tsx test.ts
+    ```
+    
+    or for JavaScript:
+    
+    ```bash
+    node test.js
+    ```
+  </Step>
+  
+  <Step title="Check the output">
+    You should see "PolyVal is working!" in your console
+  </Step>
+</Steps>
+
+## TypeScript configuration
+
+If you're using TypeScript, ensure your `tsconfig.json` includes the following settings:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true
+  }
+}
+```
+
+<Tip>
+  PolyVal is fully typed, so you'll get autocomplete and type checking in your IDE when using TypeScript.
+</Tip>
+
+## Next steps
+
+<Card
+  title="Quickstart guide"
+  icon="rocket"
+  href="/quickstart"
+>
+  Learn how to create your first validation schema and validate data
+</Card>

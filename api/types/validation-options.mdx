@@ -1,0 +1,215 @@
+---
+title: ValidationOptions
+description: Configuration options for the validate function
+---
+
+## Type definition
+
+```typescript
+interface ValidationOptions {
+  lang: string;
+  customMessages?: CustomMessages;
+}
+```
+
+Configuration options passed to the `validate` function to control language and error message customization.
+
+## Properties
+
+<ResponseField name="lang" type="string" required>
+  The language code for default error messages. Common values include:
+  
+  - `"en"` - English
+  - `"es"` - Spanish
+  - `"fr"` - French
+  - `"de"` - German
+  - `"ja"` - Japanese
+  
+  <Note>
+    The library uses this language code to load the appropriate default error messages. If the specified language is not supported, it may fall back to English.
+  </Note>
+</ResponseField>
+
+<ResponseField name="customMessages" type="CustomMessages">
+  Optional custom error messages to override the default messages. See [CustomMessages](/api/types/custom-messages) for the complete structure.
+  
+  Custom messages can be defined at three levels of specificity:
+  
+  1. **Global level** - Override messages for all fields (e.g., `required`, `invalid_type`)
+  2. **Type level** - Override messages for specific types (e.g., `string.email`, `number.min`)
+  3. **Field level** - Override messages for specific fields (e.g., `fields.email.required`)
+  
+  More specific messages take precedence over general ones.
+</ResponseField>
+
+## Examples
+
+### Basic usage with language
+
+```typescript
+import { validate } from 'polyval';
+
+const schema = {
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  }
+};
+
+const data = { email: '' };
+
+// Use English error messages
+const errors = validate(schema, data, { lang: 'en' });
+console.log(errors);
+// ["Email: This field is required"]
+```
+
+### With custom global messages
+
+```typescript
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    required: 'This field is mandatory',
+    invalid_type: 'Invalid data type'
+  }
+});
+```
+
+### With type-level custom messages
+
+```typescript
+const schema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  age: {
+    type: 'number',
+    required: true,
+    min: 18
+  }
+};
+
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    string: {
+      min: (min) => `Must be at least ${min} characters long`,
+      email: 'Please provide a valid email address'
+    },
+    number: {
+      min: (min) => `Must be at least ${min}`,
+      max: (max) => `Cannot exceed ${max}`
+    }
+  }
+});
+```
+
+### With field-level custom messages
+
+```typescript
+const schema = {
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  confirmEmail: {
+    type: 'string',
+    required: true,
+    equals: 'email'
+  }
+};
+
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    fields: {
+      email: {
+        required: 'Email address is required',
+        email: 'Please enter a valid email address'
+      },
+      confirmEmail: {
+        required: 'Please confirm your email address',
+        equals: 'Email addresses must match'
+      }
+    }
+  }
+});
+```
+
+### Message priority example
+
+```typescript
+const schema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  }
+};
+
+const errors = validate(schema, { password: 'short' }, {
+  lang: 'en',
+  customMessages: {
+    // Global message (lowest priority)
+    required: 'Field is required',
+    
+    // Type-level message (medium priority)
+    string: {
+      min: (min) => `Must have at least ${min} characters`
+    },
+    
+    // Field-level message (highest priority)
+    fields: {
+      password: {
+        min: (min) => `Password must be at least ${min} characters for security`
+      }
+    }
+  }
+});
+
+// Uses the field-level message (highest priority)
+console.log(errors);
+// ["Password: Password must be at least 8 characters for security"]
+```
+
+<CodeGroup>
+```typescript Simple
+const options: ValidationOptions = {
+  lang: 'en'
+};
+```
+
+```typescript With custom messages
+const options: ValidationOptions = {
+  lang: 'en',
+  customMessages: {
+    required: 'This field is required',
+    string: {
+      email: 'Invalid email format',
+      min: (min) => `Minimum ${min} characters required`
+    }
+  }
+};
+```
+
+```typescript Multilingual
+const getOptions = (language: string): ValidationOptions => ({
+  lang: language,
+  customMessages: language === 'es' ? {
+    required: 'Este campo es obligatorio',
+    string: {
+      email: 'Formato de correo inválido'
+    }
+  } : undefined
+});
+```
+</CodeGroup>
+
+<Note>
+  The `lang` parameter is required even if you provide custom messages for all validation rules. It serves as the base language for any messages not customized.
+</Note>

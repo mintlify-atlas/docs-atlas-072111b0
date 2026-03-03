@@ -1,0 +1,402 @@
+---
+title: CustomMessages
+description: Interface for customizing validation error messages
+---
+
+## Type definition
+
+```typescript
+interface CustomMessages {
+  required?: string;
+  invalid_type?: string;
+  
+  string?: {
+    email?: string;
+    min?: (min: number) => string;
+    max?: (max: number) => string;
+    length?: (len: number) => string;
+    url?: string;
+    uuid?: string;
+    cuid?: string;
+    datetime?: string;
+    ip?: string;
+    regex?: string;
+    startsWith?: (value: string) => string;
+    endsWith?: (value: string) => string;
+    numeric?: string;
+  };
+  
+  number?: {
+    min?: (min: number) => string;
+    max?: (max: number) => string;
+  };
+  
+  date?: {
+    min?: (date: Date) => string;
+    max?: (date: Date) => string;
+  };
+  
+  equals?: (field: string) => string;
+  notEquals?: (field: string) => string;
+  
+  fields?: {
+    [fieldName: string]: {
+      min?: (min: number) => string;
+      max?: (max: number) => string;
+      required?: string;
+      email?: string;
+      [customMessageKey: string]: any;
+    };
+  };
+  
+  custom?: {
+    [messageKey: string]: string | ((value: any, data: Record<string, any>) => string);
+  };
+}
+```
+
+Defines custom error messages to override the default validation messages. Messages can be customized at three levels: global, type-specific, and field-specific.
+
+## Message priority
+
+When multiple message definitions exist, PolyVal uses the following priority order (highest to lowest):
+
+1. **Field-specific messages** - `fields[fieldName][rule]`
+2. **Type-specific messages** - `string[rule]`, `number[rule]`, `date[rule]`
+3. **Global messages** - `required`, `invalid_type`, etc.
+4. **Default messages** - Built-in messages from the language file
+
+## Properties
+
+### Global messages
+
+<ResponseField name="required" type="string">
+  Message when a required field is missing or empty.
+  
+  **Default (en):** `"This field is required"`
+</ResponseField>
+
+<ResponseField name="invalid_type" type="string">
+  Message when a field value doesn't match the expected type.
+  
+  **Default (en):** `"Invalid type"`
+</ResponseField>
+
+### String messages
+
+<ResponseField name="string" type="object">
+  Messages for string validation rules.
+  
+  <Expandable title="properties">
+    <ResponseField name="email" type="string">
+      Message for invalid email format.
+    </ResponseField>
+    
+    <ResponseField name="min" type="(min: number) => string">
+      Function that receives the minimum length and returns an error message.
+    </ResponseField>
+    
+    <ResponseField name="max" type="(max: number) => string">
+      Function that receives the maximum length and returns an error message.
+    </ResponseField>
+    
+    <ResponseField name="length" type="(len: number) => string">
+      Function that receives the exact required length and returns an error message.
+    </ResponseField>
+    
+    <ResponseField name="url" type="string">
+      Message for invalid URL format.
+    </ResponseField>
+    
+    <ResponseField name="uuid" type="string">
+      Message for invalid UUID format.
+    </ResponseField>
+    
+    <ResponseField name="cuid" type="string">
+      Message for invalid CUID format.
+    </ResponseField>
+    
+    <ResponseField name="datetime" type="string">
+      Message for invalid ISO 8601 datetime format.
+    </ResponseField>
+    
+    <ResponseField name="ip" type="string">
+      Message for invalid IP address format.
+    </ResponseField>
+    
+    <ResponseField name="regex" type="string">
+      Message when string doesn't match the regex pattern.
+    </ResponseField>
+    
+    <ResponseField name="startsWith" type="(value: string) => string">
+      Function that receives the required prefix and returns an error message.
+    </ResponseField>
+    
+    <ResponseField name="endsWith" type="(value: string) => string">
+      Function that receives the required suffix and returns an error message.
+    </ResponseField>
+    
+    <ResponseField name="numeric" type="string">
+      Message when string contains non-numeric characters.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Number messages
+
+<ResponseField name="number" type="object">
+  Messages for number validation rules.
+  
+  <Expandable title="properties">
+    <ResponseField name="min" type="(min: number) => string">
+      Function that receives the minimum value and returns an error message.
+    </ResponseField>
+    
+    <ResponseField name="max" type="(max: number) => string">
+      Function that receives the maximum value and returns an error message.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Date messages
+
+<ResponseField name="date" type="object">
+  Messages for date validation rules.
+  
+  <Expandable title="properties">
+    <ResponseField name="min" type="(date: Date) => string">
+      Function that receives the minimum date and returns an error message.
+    </ResponseField>
+    
+    <ResponseField name="max" type="(date: Date) => string">
+      Function that receives the maximum date and returns an error message.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Field comparison messages
+
+<ResponseField name="equals" type="(field: string) => string">
+  Function that receives the target field name and returns an error message when fields don't match.
+</ResponseField>
+
+<ResponseField name="notEquals" type="(field: string) => string">
+  Function that receives the target field name and returns an error message when fields incorrectly match.
+</ResponseField>
+
+### Field-specific messages
+
+<ResponseField name="fields" type="object">
+  Messages for specific fields in your schema. Keys are field names from your schema.
+  
+  <Expandable title="structure">
+    <ResponseField name="[fieldName]" type="object">
+      Custom messages for a specific field.
+      
+      <Expandable title="properties">
+        <ResponseField name="min" type="(min: number) => string">
+          Field-specific minimum length/value message.
+        </ResponseField>
+        
+        <ResponseField name="max" type="(max: number) => string">
+          Field-specific maximum length/value message.
+        </ResponseField>
+        
+        <ResponseField name="required" type="string">
+          Field-specific required message.
+        </ResponseField>
+        
+        <ResponseField name="email" type="string">
+          Field-specific email validation message.
+        </ResponseField>
+        
+        <ResponseField name="[customMessageKey]" type="any">
+          Any custom message key defined in your custom validators.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Custom validator messages
+
+<ResponseField name="custom" type="object">
+  Global messages for custom validators. Keys are the `messageKey` values from your custom validators.
+  
+  Each key can map to either:
+  - A static string message
+  - A function that receives `(value, data)` and returns a string
+</ResponseField>
+
+## Examples
+
+### Global message overrides
+
+```typescript
+const customMessages: CustomMessages = {
+  required: 'This field is mandatory',
+  invalid_type: 'Please provide the correct data type'
+};
+```
+
+### Type-specific messages
+
+```typescript
+const customMessages: CustomMessages = {
+  string: {
+    email: 'Please enter a valid email address',
+    min: (min) => `Must be at least ${min} characters`,
+    max: (max) => `Cannot exceed ${max} characters`,
+    url: 'Must be a valid URL',
+    regex: 'Format is invalid'
+  },
+  number: {
+    min: (min) => `Value must be ${min} or greater`,
+    max: (max) => `Value cannot exceed ${max}`
+  }
+};
+```
+
+### Field-specific messages
+
+```typescript
+const customMessages: CustomMessages = {
+  fields: {
+    email: {
+      required: 'Email address is required to create an account',
+      email: 'Please provide a valid email address'
+    },
+    password: {
+      required: 'Password is required',
+      min: (min) => `Password must be at least ${min} characters for security`
+    },
+    age: {
+      required: 'Please enter your age',
+      min: (min) => `You must be at least ${min} years old to register`
+    }
+  }
+};
+```
+
+### Custom validator messages
+
+```typescript
+const schema: SimpleValidationSchema = {
+  password: {
+    type: 'string',
+    required: true,
+    customValidators: [
+      {
+        validator: (value) => {
+          if (!/[A-Z]/.test(value)) {
+            return 'Default uppercase error';
+          }
+          return undefined;
+        },
+        messageKey: 'passwordUppercase'
+      }
+    ]
+  }
+};
+
+const customMessages: CustomMessages = {
+  // Global custom message
+  custom: {
+    passwordUppercase: 'Password must include at least one uppercase letter'
+  },
+  // Field-specific custom message (takes priority)
+  fields: {
+    password: {
+      passwordUppercase: 'Your password needs an uppercase letter (A-Z)'
+    }
+  }
+};
+```
+
+### Complete example with all message types
+
+```typescript
+const customMessages: CustomMessages = {
+  // Global
+  required: 'Required field',
+  invalid_type: 'Invalid data type',
+  
+  // Type-specific
+  string: {
+    email: 'Invalid email format',
+    min: (min) => `Min ${min} chars`,
+    max: (max) => `Max ${max} chars`
+  },
+  number: {
+    min: (min) => `Minimum: ${min}`,
+    max: (max) => `Maximum: ${max}`
+  },
+  
+  // Field comparison
+  equals: (field) => `Must match ${field}`,
+  notEquals: (field) => `Cannot match ${field}`,
+  
+  // Field-specific
+  fields: {
+    password: {
+      required: 'Password is required',
+      min: (min) => `Password needs ${min}+ characters`
+    },
+    confirmPassword: {
+      required: 'Please confirm password',
+      equals: 'Passwords must match'
+    }
+  },
+  
+  // Custom validators
+  custom: {
+    strongPassword: 'Password must contain uppercase, lowercase, number, and special character'
+  }
+};
+```
+
+### Multilingual support
+
+```typescript
+const getCustomMessages = (lang: string): CustomMessages => {
+  const messages: Record<string, CustomMessages> = {
+    en: {
+      required: 'This field is required',
+      string: {
+        email: 'Invalid email address',
+        min: (min) => `Must be at least ${min} characters`
+      }
+    },
+    es: {
+      required: 'Este campo es obligatorio',
+      string: {
+        email: 'Dirección de correo inválida',
+        min: (min) => `Debe tener al menos ${min} caracteres`
+      }
+    },
+    fr: {
+      required: 'Ce champ est requis',
+      string: {
+        email: 'Adresse e-mail invalide',
+        min: (min) => `Doit contenir au moins ${min} caractères`
+      }
+    }
+  };
+  
+  return messages[lang] || messages.en;
+};
+
+// Usage
+const errors = validate(schema, data, {
+  lang: 'es',
+  customMessages: getCustomMessages('es')
+});
+```
+
+<Note>
+  Field-specific messages always take precedence over type-specific and global messages. This allows you to provide context-specific guidance for important fields.
+</Note>
+
+<Warning>
+  When using functions for messages (like `min`, `max`, `equals`), ensure they return strings, not other data types.
+</Warning>

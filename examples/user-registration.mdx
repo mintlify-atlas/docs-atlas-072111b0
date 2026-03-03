@@ -1,0 +1,254 @@
+---
+title: User registration
+description: Complete example of building a user registration form validation with PolyVal
+---
+
+This guide demonstrates how to build a complete user registration validation system using PolyVal. We'll cover username validation, email verification, password strength requirements, and terms acceptance.
+
+## Complete registration schema
+
+Here's a production-ready user registration schema that validates all common registration fields:
+
+```typescript
+import { validate, SimpleValidationSchema } from 'polyval';
+
+const userRegistrationSchema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    regex: '^[a-zA-Z0-9_]+$', // Only alphanumeric characters and underscore
+    customValidators: [
+      {
+        // Prevent usage of 'admin' as username
+        validator: (value: string) => {
+          return value.toLowerCase() === 'admin' 
+            ? 'Username admin is reserved' 
+            : undefined;
+        },
+        messageKey: 'noAdminUsername'
+      }
+    ]
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true // Email format validation
+  },
+  password: {
+    type: 'string',
+    required: true,
+    min: 8,
+    // Password must contain at least one uppercase letter, one lowercase letter, 
+    // one number and one special character
+    regex: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$'
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password' // Must match the password field
+  },
+  age: {
+    type: 'number',
+    min: 18 // Minimum age requirement
+  },
+  acceptTerms: {
+    type: 'boolean',
+    required: true,
+    equals: true // Terms must be accepted
+  }
+};
+```
+
+## Validating user input
+
+<Steps>
+  <Step title="Define test data">
+    Let's validate some invalid registration data to see how PolyVal catches errors:
+
+    ```typescript
+    const invalidData = {
+      username: 'a',
+      email: 'invalid-email',
+      password: 'weak',
+      confirmPassword: 'different',
+      age: 16,
+      acceptTerms: false
+    };
+    ```
+  </Step>
+
+  <Step title="Validate with default messages">
+    Validate the data using Turkish error messages:
+
+    ```typescript
+    const errorsTR = validate(userRegistrationSchema, invalidData, { lang: 'tr' });
+    errorsTR.forEach((error: string) => console.log(`- ${error}`));
+    ```
+
+    <Note>
+      PolyVal supports both `en` (English) and `tr` (Turkish) languages out of the box.
+    </Note>
+  </Step>
+
+  <Step title="Customize error messages">
+    Provide custom error messages for better user experience:
+
+    ```typescript
+    const customMessages = {
+      required: "This field cannot be empty",
+      
+      string: {
+        min: (min: number) => `At least ${min} characters required`,
+        max: (max: number) => `Cannot exceed ${max} characters`,
+        email: "Please enter a valid email address",
+        regex: "Contains invalid characters"
+      },
+      
+      number: {
+        min: (min: number) => `Must be at least ${min} years old`
+      },
+      
+      // Field-specific custom messages
+      fields: {
+        username: {
+          min: (min: number) => `Username must have at least ${min} characters`,
+          noAdminUsername: "Sorry, 'admin' is a reserved username"
+        },
+        password: {
+          min: (min: number) => `Password must be at least ${min} characters long`,
+          regex: "Password must include uppercase, lowercase, number and special character"
+        },
+        confirmPassword: {
+          equals: "Passwords do not match"
+        },
+        acceptTerms: {
+          equals: "You must accept the terms and conditions"
+        }
+      }
+    };
+
+    const errorsEN = validate(userRegistrationSchema, invalidData, { 
+      lang: 'en',
+      customMessages
+    });
+    errorsEN.forEach((error: string) => console.log(`- ${error}`));
+    ```
+  </Step>
+</Steps>
+
+## Validating successful registration
+
+Here's an example of valid registration data that passes all validation rules:
+
+```typescript
+const validData = {
+  username: 'johndoe',
+  email: 'john.doe@example.com',
+  password: 'Secure1@Password',
+  confirmPassword: 'Secure1@Password',
+  age: 25,
+  acceptTerms: true
+};
+
+const noErrors = validate(userRegistrationSchema, validData, { lang: 'en' });
+if (noErrors.length === 0) {
+  console.log('✓ Data validation successful, no errors!');
+} else {
+  console.log('Unexpected errors:', noErrors);
+}
+```
+
+<Tip>
+  When validation succeeds, `validate()` returns an empty array, making it easy to check if the data is valid.
+</Tip>
+
+## Key validation features
+
+<CardGroup cols={2}>
+  <Card title="Username validation" icon="user">
+    - Length between 3-20 characters
+    - Alphanumeric and underscore only
+    - Reserved username blocking
+  </Card>
+  <Card title="Password strength" icon="lock">
+    - Minimum 8 characters
+    - Requires uppercase, lowercase, number, and special character
+    - Confirmation matching
+  </Card>
+  <Card title="Email verification" icon="envelope">
+    - Built-in email format validation
+    - Required field enforcement
+  </Card>
+  <Card title="Age restriction" icon="calendar">
+    - Minimum age requirement (18+)
+    - Numeric validation
+  </Card>
+</CardGroup>
+
+## Integration with React forms
+
+Here's how you might integrate this validation into a React form:
+
+```typescript
+import { useState } from 'react';
+import { validate } from 'polyval';
+
+function RegistrationForm() {
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    age: '',
+    acceptTerms: false
+  });
+  const [errors, setErrors] = useState<string[]>([]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const validationErrors = validate(
+      userRegistrationSchema, 
+      formData, 
+      { lang: 'en', customMessages }
+    );
+    
+    if (validationErrors.length === 0) {
+      // Submit form data
+      console.log('Registration successful!');
+    } else {
+      setErrors(validationErrors);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {errors.length > 0 && (
+        <div className="error-list">
+          {errors.map((error, i) => (
+            <div key={i}>{error}</div>
+          ))}
+        </div>
+      )}
+      {/* Form fields */}
+    </form>
+  );
+}
+```
+
+<Info>
+  The validation runs synchronously and returns immediately, making it perfect for client-side form validation.
+</Info>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Form validation patterns" href="/examples/form-validation" icon="list-check">
+    Learn more validation patterns for common form scenarios
+  </Card>
+  <Card title="Custom validators" href="/guides/custom-validators" icon="code">
+    Create your own validation rules
+  </Card>
+</CardGroup>

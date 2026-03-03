@@ -1,0 +1,545 @@
+---
+title: Validation rules
+description: Complete reference of all validation rules available in PolyVal
+---
+
+PolyVal provides a comprehensive set of validation rules for different data types. Each rule is designed to be simple to use while covering common validation scenarios.
+
+## Common rules
+
+These rules apply to all field types:
+
+### required
+
+Makes a field mandatory. The field cannot be `undefined`, `null`, or an empty string.
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true
+  }
+};
+```
+
+<Info>
+If a field is not marked as `required` and the value is `undefined` or `null`, all other validation rules are skipped for that field.
+</Info>
+
+## String rules
+
+Validation rules specific to `type: 'string'` fields.
+
+### min
+
+Minimum string length in characters.
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    min: 3  // Must be at least 3 characters
+  }
+};
+```
+
+### max
+
+Maximum string length in characters.
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    max: 20  // Must not exceed 20 characters
+  }
+};
+```
+
+### length
+
+Exact string length required.
+
+```typescript
+const schema = {
+  pin: {
+    type: 'string',
+    length: 6  // Must be exactly 6 characters
+  }
+};
+```
+
+### email
+
+Validates email format using a regex pattern.
+
+```typescript
+const schema = {
+  email: {
+    type: 'string',
+    email: true
+  }
+};
+```
+
+<Note>
+The email validation uses the pattern: `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`
+</Note>
+
+### url
+
+Validates URL format.
+
+```typescript
+const schema = {
+  website: {
+    type: 'string',
+    url: true
+  }
+};
+```
+
+### uuid
+
+Validates UUID format.
+
+```typescript
+const schema = {
+  id: {
+    type: 'string',
+    uuid: true
+  }
+};
+```
+
+### cuid
+
+Validates CUID (Collision-resistant Unique Identifier) format.
+
+```typescript
+const schema = {
+  userId: {
+    type: 'string',
+    cuid: true
+  }
+};
+```
+
+### datetime
+
+Validates ISO 8601 datetime format.
+
+```typescript
+const schema = {
+  timestamp: {
+    type: 'string',
+    datetime: true
+  }
+};
+```
+
+### ip
+
+Validates IP address format. Accepts `'v4'` or `'v6'`.
+
+```typescript
+const schema = {
+  serverIp: {
+    type: 'string',
+    ip: 'v4'  // IPv4 format
+  },
+  serverIpV6: {
+    type: 'string',
+    ip: 'v6'  // IPv6 format
+  }
+};
+```
+
+### regex
+
+Validates against a custom regex pattern. Provide the pattern as a string.
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    regex: '^[a-zA-Z0-9]+$'  // Only alphanumeric characters
+  },
+  strongPassword: {
+    type: 'string',
+    regex: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$'
+  }
+};
+```
+
+<Warning>
+Provide regex patterns as strings, not RegExp objects. The string will be converted to a RegExp internally using `new RegExp(pattern)`.
+</Warning>
+
+### startsWith
+
+Checks if the string starts with a specific value.
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    startsWith: 'user_'
+  }
+};
+```
+
+### endsWith
+
+Checks if the string ends with a specific value.
+
+```typescript
+const schema = {
+  filename: {
+    type: 'string',
+    endsWith: '.pdf'
+  }
+};
+```
+
+### numeric
+
+Ensures the string contains only numeric characters.
+
+```typescript
+const schema = {
+  phoneNumber: {
+    type: 'string',
+    numeric: true
+  }
+};
+```
+
+## Number rules
+
+Validation rules specific to `type: 'number'` fields.
+
+### min
+
+Minimum numeric value.
+
+```typescript
+const schema = {
+  age: {
+    type: 'number',
+    min: 18  // Must be at least 18
+  }
+};
+```
+
+### max
+
+Maximum numeric value.
+
+```typescript
+const schema = {
+  age: {
+    type: 'number',
+    max: 120  // Must not exceed 120
+  }
+};
+```
+
+<Tip>
+Combine `min` and `max` to create a valid range: `{ type: 'number', min: 0, max: 100 }`
+</Tip>
+
+## Date rules
+
+Validation rules specific to `type: 'date'` fields.
+
+### min
+
+Minimum date value (as timestamp).
+
+```typescript
+const schema = {
+  appointmentDate: {
+    type: 'date',
+    min: Date.now()  // Must be in the future
+  }
+};
+```
+
+### max
+
+Maximum date value (as timestamp).
+
+```typescript
+const schema = {
+  birthdate: {
+    type: 'date',
+    max: Date.now()  // Must be in the past
+  }
+};
+```
+
+<Info>
+Date validation expects numeric timestamps. Use `Date.now()` or `new Date().getTime()` to get timestamp values.
+</Info>
+
+## Boolean rules
+
+Validation rules specific to `type: 'boolean'` fields.
+
+### equals
+
+For boolean fields, `equals` checks if the value matches a specific boolean.
+
+```typescript
+const schema = {
+  acceptTerms: {
+    type: 'boolean',
+    required: true,
+    equals: true  // Must be true (e.g., checkbox must be checked)
+  },
+  optOut: {
+    type: 'boolean',
+    equals: false  // Must be false
+  }
+};
+```
+
+## Field comparison rules
+
+These rules compare a field's value with another field in the data object.
+
+### equals
+
+For non-boolean fields, `equals` compares the field value with another field.
+
+```typescript
+const schema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password'  // Must match the 'password' field
+  }
+};
+```
+
+**Implementation from source:**
+
+```typescript
+// From src/index.ts:269-303
+if (fieldConfig.equals !== undefined) {
+  if (typeof fieldConfig.equals === 'string') {
+    const targetField = fieldConfig.equals;
+    if (data[targetField] !== value) {
+      let errorMessage: string;
+      
+      // Priority order
+      if (customMessages?.fields?.[fieldName]?.equals) {
+        // Field-based custom message
+        const messageProvider = customMessages.fields[fieldName].equals;
+        if (typeof messageProvider === 'function') {
+          errorMessage = (messageProvider as (field: string) => string)(targetField);
+        } else {
+          errorMessage = messageProvider as string;
+        }
+      } else if (customMessages?.equals) {
+        // General custom message
+        errorMessage = customMessages.equals(targetField);
+      } else {
+        // Default message
+        errorMessage = messages.equals(targetField);
+      }
+      
+      errors.push(`${formattedFieldName}: ${errorMessage}`);
+    }
+  }
+}
+```
+
+### notEquals
+
+Ensures the field value does NOT match another field.
+
+```typescript
+const schema = {
+  password: {
+    type: 'string',
+    required: true
+  },
+  oldPassword: {
+    type: 'string',
+    required: true,
+    notEquals: 'password'  // Must NOT match the 'password' field
+  }
+};
+```
+
+<Warning>
+Field comparison rules reference other fields by their key name in the data object. Make sure the referenced field exists.
+</Warning>
+
+## Custom validators
+
+Define your own validation logic with custom validators.
+
+### Structure
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    customValidators: [
+      {
+        validator: (value, data) => {
+          // Return string for error, undefined for success
+          if (value.toLowerCase() === 'admin') {
+            return 'This username is not available';
+          }
+          return undefined;
+        },
+        messageKey: 'noAdminUsername'  // Optional
+      }
+    ]
+  }
+};
+```
+
+### Validator function
+
+The validator function receives two parameters:
+
+- `value` - The current field's value
+- `data` - The entire data object being validated
+
+Return:
+- `string` - Error message if validation fails
+- `undefined` - If validation passes
+
+### Multiple validators
+
+You can add multiple custom validators to a single field:
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    customValidators: [
+      {
+        validator: (value) => {
+          return value.toLowerCase() !== 'admin' 
+            ? undefined 
+            : 'Admin username not allowed';
+        },
+        messageKey: 'noAdminUsername'
+      },
+      {
+        validator: (value) => {
+          return !value.includes('_') 
+            ? undefined 
+            : 'Underscores not allowed';
+        },
+        messageKey: 'noUnderscores'
+      }
+    ]
+  }
+};
+```
+
+### Accessing other fields
+
+Use the `data` parameter to access other fields:
+
+```typescript
+const schema = {
+  confirmPassword: {
+    type: 'string',
+    customValidators: [
+      {
+        validator: (value, data) => {
+          // Access the password field
+          if (value === data.password + '123') {
+            return 'Password is too predictable';
+          }
+          return undefined;
+        },
+        messageKey: 'predictablePassword'
+      }
+    ]
+  }
+};
+```
+
+**Implementation from source:**
+
+```typescript
+// From src/index.ts:332-366
+if (fieldConfig.customValidators && fieldConfig.customValidators.length > 0) {
+  for (const validator of fieldConfig.customValidators) {
+    const validationResult = validator.validator(value, data);
+    
+    if (validationResult !== undefined) {
+      // Custom validator returned an error
+      let errorMessage = validationResult;
+      
+      // If messageKey is specified, check custom messages
+      if (validator.messageKey) {
+        // Priority order
+        if (customMessages?.fields?.[fieldName]?.[validator.messageKey]) {
+          // Field-based custom message
+          const messageProvider = customMessages.fields[fieldName][validator.messageKey];
+          if (typeof messageProvider === 'function') {
+            errorMessage = (messageProvider as (value: any, data: Record<string, any>) => string)(value, data);
+          } else {
+            errorMessage = messageProvider as string;
+          }
+        } else if (customMessages?.custom?.[validator.messageKey]) {
+          // Global custom message
+          const messageProvider = customMessages.custom[validator.messageKey];
+          if (typeof messageProvider === 'function') {
+            errorMessage = (messageProvider as (value: any, data: Record<string, any>) => string)(value, data);
+          } else {
+            errorMessage = messageProvider as string;
+          }
+        }
+      }
+      
+      errors.push(`${formattedFieldName}: ${errorMessage}`);
+    }
+  }
+}
+```
+
+## Combining rules
+
+You can combine multiple validation rules on a single field:
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20,
+    regex: '^[a-zA-Z0-9]+$',
+    startsWith: 'user_',
+    customValidators: [
+      {
+        validator: (value) => {
+          return value.toLowerCase() !== 'admin' 
+            ? undefined 
+            : 'Reserved username';
+        }
+      }
+    ]
+  }
+};
+```
+
+<Note>
+Validation rules are checked in order. If a field fails the type check, subsequent rules are skipped for that field.
+</Note>

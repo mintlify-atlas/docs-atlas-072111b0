@@ -1,0 +1,425 @@
+---
+title: Form validation patterns
+description: Common form validation patterns and techniques using PolyVal
+---
+
+This guide covers practical form validation patterns using PolyVal. Learn how to validate different field types, implement field comparisons, and create custom validation rules.
+
+## Basic field validation
+
+### String fields
+
+Validate text input with length constraints and format requirements:
+
+```typescript
+import { validate, SimpleValidationSchema } from 'polyval';
+
+const userSchema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    min: 3,
+    max: 20
+  },
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  age: {
+    type: 'number',
+    min: 18
+  }
+};
+
+const userData = {
+  username: 'jo',
+  email: 'invalid-email',
+  age: 16
+};
+
+const errors = validate(userSchema, userData, { lang: 'en' });
+// Returns: [
+//   "Username: Must be at least 3 characters long",
+//   "Email: Invalid email address",
+//   "Age: Must be at least 18"
+// ]
+```
+
+<Note>
+  All validation rules are optional except `type`. Fields are optional by default unless you set `required: true`.
+</Note>
+
+### Number validation
+
+Validate numeric inputs with minimum and maximum values:
+
+```typescript
+const productSchema: SimpleValidationSchema = {
+  price: {
+    type: 'number',
+    required: true,
+    min: 0
+  },
+  quantity: {
+    type: 'number',
+    required: true,
+    min: 1,
+    max: 100
+  },
+  discount: {
+    type: 'number',
+    min: 0,
+    max: 100
+  }
+};
+```
+
+### Boolean validation
+
+Validate checkboxes and toggle switches:
+
+```typescript
+const termsSchema: SimpleValidationSchema = {
+  acceptTerms: {
+    type: 'boolean',
+    required: true,
+    equals: true
+  },
+  newsletter: {
+    type: 'boolean'
+  }
+};
+
+const formData = {
+  acceptTerms: false,
+  newsletter: true
+};
+
+const errors = validate(termsSchema, formData, { lang: 'en' });
+// Returns error because acceptTerms must be true
+```
+
+<Tip>
+  Use `equals: true` on boolean fields when you need to ensure a checkbox is checked, like for terms acceptance.
+</Tip>
+
+## Field comparison validation
+
+Validate fields relative to other fields in the form:
+
+### Password confirmation
+
+```typescript
+const passwordSchema: SimpleValidationSchema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password' // Must match the password field
+  }
+};
+
+const invalidData = {
+  password: 'secret123',
+  confirmPassword: 'different'
+};
+
+const errors = validate(passwordSchema, invalidData, { lang: 'en' });
+// Returns: ["ConfirmPassword: Must match the password field"]
+```
+
+### Password change validation
+
+Ensure new password differs from old password:
+
+```typescript
+const changePasswordSchema: SimpleValidationSchema = {
+  oldPassword: {
+    type: 'string',
+    required: true
+  },
+  newPassword: {
+    type: 'string',
+    required: true,
+    min: 8,
+    notEquals: 'oldPassword' // Must not match the old password
+  },
+  confirmNewPassword: {
+    type: 'string',
+    required: true,
+    equals: 'newPassword'
+  }
+};
+```
+
+<Info>
+  Use `notEquals` to ensure a field value differs from another field, perfect for password changes or preventing duplicate entries.
+</Info>
+
+## Custom validation rules
+
+Implement custom business logic with custom validators:
+
+### Reserved username check
+
+```typescript
+const schemaWithCustomValidator: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    customValidators: [
+      {
+        validator: (value) => {
+          if (value.toLowerCase() === 'admin') {
+            return 'Cannot use admin as username';
+          }
+          return undefined;
+        },
+        messageKey: 'noAdminUsername'
+      }
+    ]
+  }
+};
+
+const invalidData = {
+  username: 'admin'
+};
+
+const errors = validate(schemaWithCustomValidator, invalidData, { lang: 'en' });
+// Returns: ["Username: Cannot use admin as username"]
+```
+
+<Note>
+  Custom validators should return `undefined` for valid values and an error message string for invalid values.
+</Note>
+
+### Cross-field validation
+
+Access other field values in custom validators:
+
+```typescript
+const schema: SimpleValidationSchema = {
+  startDate: {
+    type: 'date',
+    required: true
+  },
+  endDate: {
+    type: 'date',
+    required: true,
+    customValidators: [
+      {
+        validator: (value, data) => {
+          if (data.startDate && value < data.startDate) {
+            return 'End date must be after start date';
+          }
+          return undefined;
+        },
+        messageKey: 'endDateAfterStart'
+      }
+    ]
+  }
+};
+```
+
+<Tip>
+  The second parameter in custom validators provides access to all form data, enabling complex cross-field validation.
+</Tip>
+
+## Customizing error messages
+
+<Steps>
+  <Step title="Type-level customization">
+    Customize messages for all fields of a specific type:
+
+    ```typescript
+    const errors = validate(userSchema, userData, {
+      lang: 'en',
+      customMessages: {
+        string: {
+          min: (min) => `Minimum ${min} characters required`,
+          email: 'Email format is incorrect'
+        },
+        number: {
+          min: (min) => `Must be at least ${min}`
+        }
+      }
+    });
+    ```
+  </Step>
+
+  <Step title="Field-specific customization">
+    Override messages for individual fields:
+
+    ```typescript
+    const errors = validate(userSchema, userData, {
+      lang: 'en',
+      customMessages: {
+        fields: {
+          username: {
+            min: (min) => `Username must be at least ${min} characters long`
+          },
+          email: {
+            email: 'Please enter a valid email address'
+          }
+        }
+      }
+    });
+    ```
+  </Step>
+
+  <Step title="Custom validator messages">
+    Provide messages for custom validation rules:
+
+    ```typescript
+    const errors = validate(schema, data, {
+      lang: 'en',
+      customMessages: {
+        fields: {
+          username: {
+            noAdminUsername: "Sorry, 'admin' is a reserved username"
+          }
+        },
+        custom: {
+          endDateAfterStart: 'End date must be later than start date'
+        }
+      }
+    });
+    ```
+  </Step>
+</Steps>
+
+## Message priority
+
+Error messages are resolved in this order (highest to lowest priority):
+
+1. **Field-specific custom validator messages**: `customMessages.fields['fieldName']['customMessageKey']`
+2. **Field-specific rule messages**: `customMessages.fields['fieldName']['min']`
+3. **Global custom validator messages**: `customMessages.custom['messageKey']`
+4. **Type-based rule messages**: `customMessages.string.email`, `customMessages.number.min`
+5. **General error messages**: `customMessages.required`, `customMessages.invalid_type`
+6. **Default language messages**: Built-in English or Turkish messages
+
+<Info>
+  This priority system allows you to provide general customizations while overriding specific cases where needed.
+</Info>
+
+## Multilingual validation
+
+PolyVal supports multiple languages out of the box:
+
+<CodeGroup>
+```typescript English
+const errors = validate(userSchema, userData, { lang: 'en' });
+// ["Username: Must be at least 3 characters long"]
+```
+
+```typescript Turkish
+const errors = validate(userSchema, userData, { lang: 'tr' });
+// ["Username: En az 3 karakter uzunluğunda olmalıdır"]
+```
+</CodeGroup>
+
+<Tip>
+  Switch languages dynamically based on user preferences without changing your validation schema.
+</Tip>
+
+## Real-time validation example
+
+Implement real-time validation as users type:
+
+```typescript
+import { useState, useEffect } from 'react';
+import { validate } from 'polyval';
+
+function FormField({ name, schema }: { name: string; schema: SimpleValidationSchema }) {
+  const [value, setValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Debounce validation
+    const timer = setTimeout(() => {
+      const errors = validate(schema, { [name]: value }, { lang: 'en' });
+      setError(errors[0] || null);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [value, name, schema]);
+
+  return (
+    <div>
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className={error ? 'error' : ''}
+      />
+      {error && <span className="error-message">{error}</span>}
+    </div>
+  );
+}
+```
+
+## Advanced patterns
+
+### Regex validation
+
+Use regular expressions for complex format validation:
+
+```typescript
+const schema: SimpleValidationSchema = {
+  username: {
+    type: 'string',
+    required: true,
+    regex: '^[a-zA-Z0-9_]+$' // Only alphanumeric and underscore
+  },
+  phone: {
+    type: 'string',
+    regex: '^\\+?[1-9]\\d{1,14}$' // International phone format
+  },
+  zipCode: {
+    type: 'string',
+    regex: '^\\d{5}(-\\d{4})?$' // US ZIP code
+  }
+};
+```
+
+### Strong password validation
+
+Enforce complex password requirements:
+
+```typescript
+const passwordSchema: SimpleValidationSchema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8,
+    // Must contain uppercase, lowercase, number, and special character
+    regex: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$'
+  }
+};
+```
+
+<Note>
+  Remember to escape backslashes in regex strings when using them in JavaScript/TypeScript.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="User registration" href="/examples/user-registration" icon="user-plus">
+    See a complete registration form example
+  </Card>
+  <Card title="Validation rules" href="/concepts/validation-rules" icon="book">
+    Explore all available validation rules
+  </Card>
+  <Card title="Custom messages" href="/api/types/custom-messages" icon="language">
+    Deep dive into message customization
+  </Card>
+  <Card title="Custom validators" href="/guides/custom-validators" icon="code">
+    Learn about custom validation functions
+  </Card>
+</CardGroup>

@@ -1,0 +1,154 @@
+---
+title: Introduction to PolyVal
+description: Advanced, multilingual, and customizable validation library that simplifies data validation with a clean API
+---
+
+## Welcome to PolyVal
+
+PolyVal is a multilingual and highly customizable validation library that provides developers with a simplified API for data validation. Built on top of Zod, it offers an intuitive approach to validating forms, user input, and data schemas without requiring deep knowledge of complex validation rules.
+
+<CardGroup cols={2}>
+  <Card
+    title="Installation"
+    icon="download"
+    href="/installation"
+  >
+    Get started by installing PolyVal in your project
+  </Card>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Build your first validation in minutes
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api/validate"
+  >
+    Explore the complete API documentation
+  </Card>
+  <Card
+    title="Examples"
+    icon="sparkles"
+    href="/examples/user-registration"
+  >
+    Learn from real-world examples
+  </Card>
+</CardGroup>
+
+## Key features
+
+### Simplified API
+
+Define validation schemas using simple JavaScript objects without complex type definitions. PolyVal abstracts away the complexity while maintaining full type safety.
+
+```typescript
+const schema = {
+  email: {
+    type: 'string',
+    required: true,
+    email: true
+  },
+  age: {
+    type: 'number',
+    min: 18
+  }
+};
+```
+
+### Multilingual support
+
+Built-in support for multiple languages with default translations for English and Turkish. Error messages are automatically localized based on your selected language.
+
+```typescript
+const errors = validate(schema, data, { lang: 'tr' });
+// Returns: ["Email: Geçersiz e-posta adresi"]
+```
+
+### Fully customizable error messages
+
+Customize error messages at multiple levels: globally, by type, by field, or for specific validation rules. Complete control over what your users see.
+
+```typescript
+const errors = validate(schema, data, {
+  lang: 'en',
+  customMessages: {
+    string: {
+      email: "That doesn't look like a valid email address."
+    },
+    fields: {
+      username: {
+        min: (min) => `Username needs at least ${min} characters`
+      }
+    }
+  }
+});
+```
+
+### Custom validation rules
+
+Easily extend PolyVal with your own validation logic. Define custom validators with optional message keys for consistent error handling.
+
+```typescript
+const schema = {
+  username: {
+    type: 'string',
+    required: true,
+    customValidators: [
+      {
+        validator: (value) => {
+          return value.toLowerCase() === 'admin' 
+            ? 'Username admin is reserved' 
+            : undefined;
+        },
+        messageKey: 'noAdminUsername'
+      }
+    ]
+  }
+};
+```
+
+### TypeScript support
+
+Full TypeScript support with comprehensive type definitions ensures type safety throughout your validation workflow.
+
+### Field comparison
+
+Validate fields against each other with built-in comparison operators. Perfect for password confirmation, date ranges, and related fields.
+
+```typescript
+const schema = {
+  password: {
+    type: 'string',
+    required: true,
+    min: 8
+  },
+  confirmPassword: {
+    type: 'string',
+    required: true,
+    equals: 'password'
+  }
+};
+```
+
+## Why PolyVal?
+
+PolyVal bridges the gap between powerful validation libraries like Zod and the need for a simple, intuitive API. It's designed for developers who want:
+
+- **Quick setup** - Start validating data in minutes, not hours
+- **Internationalization** - Built-in i18n support without extra configuration
+- **Flexibility** - Customize every aspect of validation and error messages
+- **Type safety** - Full TypeScript support with intelligent type inference
+- **Clean code** - Write readable validation schemas that serve as documentation
+
+## Ready to get started?
+
+<Card
+  title="Jump into the Quickstart"
+  icon="rocket"
+  href="/quickstart"
+>
+  Learn how to validate your first data schema in less than 5 minutes
+</Card>
