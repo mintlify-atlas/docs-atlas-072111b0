@@ -1,0 +1,85 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "PolyVal",
+  "projectDescription": "A multilingual and highly customizable validation library with a simplified API built on Zod",
+  "theme": "palm",
+  "primaryColor": "#7C3AED",
+  "lightColor": "#A78BFA",
+  "darkColor": "#5B21B6",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/schema-definition",
+              "concepts/validation-rules",
+              "concepts/error-messages"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/field-types",
+              "guides/field-comparison",
+              "guides/custom-validators",
+              "guides/internationalization",
+              "guides/customizing-messages"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/user-registration",
+              "examples/form-validation"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core",
+            "pages": [
+              "api/validate"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "api/types/simple-validation-schema",
+              "api/types/validation-options",
+              "api/types/custom-messages"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Simplified API without complex type definitions",
+    "Multilingual support (English and Turkish built-in)",
+    "Fully customizable error messages",
+    "Custom validation rules with flexible error handling",
+    "Full TypeScript support with type safety",
+    "Built on Zod for robust validation"
+  ],
+  "publicApiSurface": [
+    "validate(schema, data, options)",
+    "SimpleValidationSchema",
+    "ValidationOptions",
+    "CustomMessages",
+    "ValidationIssue"
+  ]
+}
